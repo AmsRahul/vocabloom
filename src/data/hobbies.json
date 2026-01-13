@@ -1,0 +1,92 @@
+[
+    {
+        "word": "Hobby",
+        "phonetic": "/ˈhɒbi/",
+        "indonesian": "Kegemaran",
+        "example": "Reading is my favorite hobby.",
+        "exampleTranslate": "Membaca adalah kegemaran favorit saya.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Reading",
+        "phonetic": "/ˈriːdɪŋ/",
+        "indonesian": "Membaca",
+        "example": "He spends his time reading books.",
+        "exampleTranslate": "Dia menghabiskan waktunya dengan membaca buku.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Listening to music",
+        "phonetic": "/ˈlɪsnɪŋ tuː ˈmjuːzɪk/",
+        "indonesian": "Mendengar musik",
+        "example": "I like listening to music while studying.",
+        "exampleTranslate": "Saya suka mendengar musik sambil belajar.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Watching movies",
+        "phonetic": "/ˈwɒtʃɪŋ ˈmuːviz/",
+        "indonesian": "Menonton film",
+        "example": "We are watching movies at the cinema.",
+        "exampleTranslate": "Kami sedang menonton film di bioskop.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Playing football",
+        "phonetic": "/ˈpleɪɪŋ ˈfʊtbɔːl/",
+        "indonesian": "Bermain bola",
+        "example": "They are playing football in the field.",
+        "exampleTranslate": "Mereka sedang bermain bola di lapangan.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Drawing",
+        "phonetic": "/ˈdrɔːɪŋ/",
+        "indonesian": "Menggambar",
+        "example": "She has a talent for drawing portraits.",
+        "exampleTranslate": "Dia memiliki bakat untuk menggambar potret.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Cooking",
+        "phonetic": "/ˈkʊkɪŋ/",
+        "indonesian": "Memasak",
+        "example": "My mother loves cooking Italian food.",
+        "exampleTranslate": "Ibu saya sangat suka memasak makanan Italia.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Traveling",
+        "phonetic": "/ˈtrævlɪŋ/",
+        "indonesian": "Jalan - jalan",
+        "example": "Traveling to new places is exciting.",
+        "exampleTranslate": "Jalan-jalan ke tempat baru sangat menyenangkan.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    },
+    {
+        "word": "Playing game",
+        "phonetic": "/ˈpleɪɪŋ ɡeɪm/",
+        "indonesian": "Bermain game",
+        "example": "He is playing game on his computer.",
+        "exampleTranslate": "Dia sedang bermain game di komputernya.",
+        "topics": [
+            "hobbies_and_interests"
+        ]
+    }
+]

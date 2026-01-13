@@ -1,0 +1,62 @@
+[
+    {
+        "word": "Dream",
+        "phonetic": "/driːm/",
+        "indonesian": "Mimpi",
+        "example": "My dream is to travel around the world.",
+        "exampleTranslate": "Mimpi saya adalah berkeliling dunia.",
+        "topics": [
+            "dreams_and_goals"
+        ]
+    },
+    {
+        "word": "Hope",
+        "phonetic": "/həʊp/",
+        "indonesian": "Harapan",
+        "example": "I hope to see you again soon.",
+        "exampleTranslate": "Saya berharap bisa bertemu kamu lagi segera.",
+        "topics": [
+            "dreams_and_goals"
+        ]
+    },
+    {
+        "word": "Future",
+        "phonetic": "/ˈfjuːtʃə(r)/",
+        "indonesian": "Masa depan",
+        "example": "We should plan for our future.",
+        "exampleTranslate": "Kita harus merencanakan masa depan kita.",
+        "topics": [
+            "dreams_and_goals"
+        ]
+    },
+    {
+        "word": "Ambition",
+        "phonetic": "/æmˈbɪʃn/",
+        "indonesian": "Ambisi",
+        "example": "Her ambition is to become a doctor.",
+        "exampleTranslate": "Ambisinya adalah menjadi seorang dokter.",
+        "topics": [
+            "dreams_and_goals"
+        ]
+    },
+    {
+        "word": "Career",
+        "phonetic": "/kəˈrɪə(r)/",
+        "indonesian": "Karir",
+        "example": "He wants to have a successful career in law.",
+        "exampleTranslate": "Dia ingin memiliki karir yang sukses di bidang hukum.",
+        "topics": [
+            "dreams_and_goals"
+        ]
+    },
+    {
+        "word": "Success",
+        "phonetic": "/səkˈses/",
+        "indonesian": "Sukses",
+        "example": "Hard work is the key to success.",
+        "exampleTranslate": "Kerja keras adalah kunci menuju sukses.",
+        "topics": [
+            "dreams_and_goals"
+        ]
+    }
+]

@@ -1,0 +1,331 @@
+[
+    {
+        "word": "rice",
+        "phonetic": "/raɪs/",
+        "indonesian": "nasi",
+        "example": "Rice is the main food in Indonesia.",
+        "exampleTranslate": "Nasi adalah makanan pokok di Indonesia.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "chicken",
+        "phonetic": "/ˈtʃɪkɪn/",
+        "indonesian": "ayam",
+        "example": "She cooks chicken for dinner.",
+        "exampleTranslate": "Dia memasak ayam untuk makan malam.",
+        "topics": [
+            "culinary",
+            "animals"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "beef",
+        "phonetic": "/biːf/",
+        "indonesian": "daging sapi",
+        "example": "Beef is used to make steak.",
+        "exampleTranslate": "Daging sapi digunakan untuk membuat steak.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "vegetable",
+        "phonetic": "/ˈvedʒtəbl/",
+        "indonesian": "sayuran",
+        "example": "Vegetables are good for health.",
+        "exampleTranslate": "Sayuran baik untuk kesehatan.",
+        "topics": [
+            "culinary",
+            "health"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "fruit",
+        "phonetic": "/fruːt/",
+        "indonesian": "buah",
+        "example": "Fruit contains many vitamins.",
+        "exampleTranslate": "Buah mengandung banyak vitamin.",
+        "topics": [
+            "culinary",
+            "health"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "salt",
+        "phonetic": "/sɔːlt/",
+        "indonesian": "garam",
+        "example": "Add a little salt to the soup.",
+        "exampleTranslate": "Tambahkan sedikit garam ke dalam sup.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "sugar",
+        "phonetic": "/ˈʃʊɡər/",
+        "indonesian": "gula",
+        "example": "Too much sugar is unhealthy.",
+        "exampleTranslate": "Terlalu banyak gula tidak sehat.",
+        "topics": [
+            "culinary",
+            "health"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "oil",
+        "phonetic": "/ɔɪl/",
+        "indonesian": "minyak",
+        "example": "Heat the oil before frying.",
+        "exampleTranslate": "Panaskan minyak sebelum menggoreng.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "soup",
+        "phonetic": "/suːp/",
+        "indonesian": "sup",
+        "example": "This soup tastes delicious.",
+        "exampleTranslate": "Sup ini rasanya lezat.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "noodle",
+        "phonetic": "/ˈnuːdl/",
+        "indonesian": "mi",
+        "example": "He likes eating noodles.",
+        "exampleTranslate": "Dia suka makan mi.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "spicy",
+        "phonetic": "/ˈspaɪsi/",
+        "indonesian": "pedas",
+        "example": "This food is very spicy.",
+        "exampleTranslate": "Makanan ini sangat pedas.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "sweet",
+        "phonetic": "/swiːt/",
+        "indonesian": "manis",
+        "example": "She likes sweet desserts.",
+        "exampleTranslate": "Dia suka makanan penutup yang manis.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "bitter",
+        "phonetic": "/ˈbɪtər/",
+        "indonesian": "pahit",
+        "example": "Coffee tastes bitter without sugar.",
+        "exampleTranslate": "Kopi terasa pahit tanpa gula.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "boil",
+        "phonetic": "/bɔɪl/",
+        "indonesian": "merebus",
+        "example": "Boil the eggs for ten minutes.",
+        "exampleTranslate": "Rebus telur selama sepuluh menit.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "fry",
+        "phonetic": "/fraɪ/",
+        "indonesian": "menggoreng",
+        "example": "She fries the fish in hot oil.",
+        "exampleTranslate": "Dia menggoreng ikan dengan minyak panas.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "grill",
+        "phonetic": "/ɡrɪl/",
+        "indonesian": "memanggang",
+        "example": "They grill meat for barbecue.",
+        "exampleTranslate": "Mereka memanggang daging untuk barbeku.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "bake",
+        "phonetic": "/beɪk/",
+        "indonesian": "memanggang (oven)",
+        "example": "She bakes a cake every weekend.",
+        "exampleTranslate": "Dia memanggang kue setiap akhir pekan.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "recipe",
+        "phonetic": "/ˈresəpi/",
+        "indonesian": "resep",
+        "example": "This recipe is easy to follow.",
+        "exampleTranslate": "Resep ini mudah diikuti.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "ingredient",
+        "phonetic": "/ɪnˈɡriːdiənt/",
+        "indonesian": "bahan masakan",
+        "example": "Fresh ingredients make better food.",
+        "exampleTranslate": "Bahan segar membuat makanan lebih enak.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "taste",
+        "phonetic": "/teɪst/",
+        "indonesian": "rasa",
+        "example": "The taste of this dish is amazing.",
+        "exampleTranslate": "Rasa masakan ini luar biasa.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "delicious",
+        "phonetic": "/dɪˈlɪʃəs/",
+        "indonesian": "lezat",
+        "example": "The food smells delicious.",
+        "exampleTranslate": "Makanan itu tercium lezat.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "kitchen",
+        "phonetic": "/ˈkɪtʃɪn/",
+        "indonesian": "dapur",
+        "example": "She is cooking in the kitchen.",
+        "exampleTranslate": "Dia sedang memasak di dapur.",
+        "topics": [
+            "culinary",
+            "daily"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "chef",
+        "phonetic": "/ʃef/",
+        "indonesian": "koki",
+        "example": "The chef prepares the food carefully.",
+        "exampleTranslate": "Koki menyiapkan makanan dengan hati-hati.",
+        "topics": [
+            "culinary",
+            "work"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "menu",
+        "phonetic": "/ˈmenjuː/",
+        "indonesian": "menu",
+        "example": "The restaurant has a varied menu.",
+        "exampleTranslate": "Restoran itu memiliki menu yang beragam.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "restaurant",
+        "phonetic": "/ˈrestrɒnt/",
+        "indonesian": "restoran",
+        "example": "We eat at a restaurant tonight.",
+        "exampleTranslate": "Kami makan di restoran malam ini.",
+        "topics": [
+            "culinary",
+            "daily"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "order",
+        "phonetic": "/ˈɔːrdər/",
+        "indonesian": "memesan",
+        "example": "I order fried rice.",
+        "exampleTranslate": "Saya memesan nasi goreng.",
+        "topics": [
+            "culinary",
+            "daily"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "serve",
+        "phonetic": "/sɜːrv/",
+        "indonesian": "menyajikan",
+        "example": "The waiter serves the food.",
+        "exampleTranslate": "Pelayan menyajikan makanan.",
+        "topics": [
+            "culinary"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "hungry",
+        "phonetic": "/ˈhʌŋɡri/",
+        "indonesian": "lapar",
+        "example": "I feel hungry after work.",
+        "exampleTranslate": "Saya merasa lapar setelah bekerja.",
+        "topics": [
+            "culinary",
+            "daily"
+        ],
+        "level": "easy"
+    },
+    {
+        "word": "full",
+        "phonetic": "/fʊl/",
+        "indonesian": "kenyang",
+        "example": "I am full after eating.",
+        "exampleTranslate": "Saya kenyang setelah makan.",
+        "topics": [
+            "culinary",
+            "daily"
+        ],
+        "level": "easy"
+    }
+]

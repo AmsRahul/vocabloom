@@ -1,0 +1,82 @@
+[
+    {
+        "word": "Wake up",
+        "phonetic": "/weɪk ʌp/",
+        "indonesian": "Bangun tidur",
+        "example": "I usually wake up at 5 AM.",
+        "exampleTranslate": "Saya biasanya bangun tidur jam 5 pagi.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Go to school",
+        "phonetic": "/ɡəʊ tuː skuːl/",
+        "indonesian": "Pergi sekolah",
+        "example": "We go to school by bus.",
+        "exampleTranslate": "Kami pergi sekolah naik bus.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Study",
+        "phonetic": "/ˈstʌdi/",
+        "indonesian": "Belajar",
+        "example": "They study English together.",
+        "exampleTranslate": "Mereka belajar bahasa Inggris bersama.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Do homework",
+        "phonetic": "/duː ˈhəʊmwɜːk/",
+        "indonesian": "Mengerjakan PR",
+        "example": "I do homework in the evening.",
+        "exampleTranslate": "Saya mengerjakan PR di malam hari.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Help my parents",
+        "phonetic": "/help maɪ ˈperənts/",
+        "indonesian": "Membantu orang tua",
+        "example": "I help my parents clean the house.",
+        "exampleTranslate": "Saya membantu orang tua membersihkan rumah.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Play",
+        "phonetic": "/pleɪ/",
+        "indonesian": "Bermain",
+        "example": "The children play in the park.",
+        "exampleTranslate": "Anak-anak bermain di taman.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Take a rest",
+        "phonetic": "/teɪk ə rest/",
+        "indonesian": "Beristirahat",
+        "example": "Let's take a rest for a while.",
+        "exampleTranslate": "Mari kita beristirahat sejenak.",
+        "topics": [
+            "daily_activities"
+        ]
+    },
+    {
+        "word": "Sleep",
+        "phonetic": "/sliːp/",
+        "indonesian": "Tidur",
+        "example": "It is time to go to sleep.",
+        "exampleTranslate": "Sudah waktunya untuk tidur.",
+        "topics": [
+            "daily_activities"
+        ]
+    }
+]

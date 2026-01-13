@@ -1,0 +1,72 @@
+[
+    {
+        "word": "Friendly",
+        "phonetic": "/ˈfrendli/",
+        "indonesian": "Ramah",
+        "example": "She is very friendly to everyone.",
+        "exampleTranslate": "Dia sangat ramah kepada semua orang.",
+        "topics": [
+            "personality"
+        ]
+    },
+    {
+        "word": "Kind",
+        "phonetic": "/kaɪnd/",
+        "indonesian": "Baik",
+        "example": "Thank you for your kind words.",
+        "exampleTranslate": "Terima kasih atas kata-katamu yang baik.",
+        "topics": [
+            "personality"
+        ]
+    },
+    {
+        "word": "Honest",
+        "phonetic": "/ˈɒnɪst/",
+        "indonesian": "Jujur",
+        "example": "An honest person never tells a lie.",
+        "exampleTranslate": "Orang yang jujur tidak pernah berbohong.",
+        "topics": [
+            "personality"
+        ]
+    },
+    {
+        "word": "Shy",
+        "phonetic": "/ʃaɪ/",
+        "indonesian": "Malu",
+        "example": "The boy is too shy to speak in public.",
+        "exampleTranslate": "Anak laki-laki itu terlalu malu untuk berbicara di depan umum.",
+        "topics": [
+            "personality"
+        ]
+    },
+    {
+        "word": "Patient",
+        "phonetic": "/ˈpeɪʃnt/",
+        "indonesian": "Sabar",
+        "example": "You need to be patient with children.",
+        "exampleTranslate": "Kamu harus sabar terhadap anak-anak.",
+        "topics": [
+            "personality"
+        ]
+    },
+    {
+        "word": "Creative",
+        "phonetic": "/kriˈeɪtɪv/",
+        "indonesian": "Kreatif",
+        "example": "She has many creative ideas for the project.",
+        "exampleTranslate": "Dia memiliki banyak ide kreatif untuk proyek itu.",
+        "topics": [
+            "personality"
+        ]
+    },
+    {
+        "word": "Responsible",
+        "phonetic": "/rɪˈspɒnsəbl/",
+        "indonesian": "Bertanggung jawab",
+        "example": "He is a responsible leader.",
+        "exampleTranslate": "Dia adalah pemimpin yang bertanggung jawab.",
+        "topics": [
+            "personality"
+        ]
+    }
+]

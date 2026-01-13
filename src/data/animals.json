@@ -1,0 +1,432 @@
+[
+    {
+        "word": "cat",
+        "phonetic": "/kæt/",
+        "indonesian": "kucing",
+        "example": "The cat is sleeping on the sofa.",
+        "exampleTranslate": "Kucing itu sedang tidur di sofa.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "dog",
+        "phonetic": "/dɒɡ/",
+        "indonesian": "anjing",
+        "example": "The dog is very friendly.",
+        "exampleTranslate": "Anjing itu sangat ramah.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "cow",
+        "phonetic": "/kaʊ/",
+        "indonesian": "sapi",
+        "example": "The cow gives milk.",
+        "exampleTranslate": "Sapi itu menghasilkan susu.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "goat",
+        "phonetic": "/ɡəʊt/",
+        "indonesian": "kambing",
+        "example": "The goat eats grass.",
+        "exampleTranslate": "Kambing itu memakan rumput.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "sheep",
+        "phonetic": "/ʃiːp/",
+        "indonesian": "domba",
+        "example": "The sheep has thick wool.",
+        "exampleTranslate": "Domba itu memiliki bulu yang tebal.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "horse",
+        "phonetic": "/hɔːs/",
+        "indonesian": "kuda",
+        "example": "The horse runs fast.",
+        "exampleTranslate": "Kuda itu berlari cepat.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "chicken",
+        "phonetic": "/ˈtʃɪkɪn/",
+        "indonesian": "ayam",
+        "example": "The chicken lays eggs.",
+        "exampleTranslate": "Ayam itu bertelur.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "duck",
+        "phonetic": "/dʌk/",
+        "indonesian": "bebek",
+        "example": "The duck swims in the pond.",
+        "exampleTranslate": "Bebek itu berenang di kolam.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "bird",
+        "phonetic": "/bɜːd/",
+        "indonesian": "burung",
+        "example": "The bird is singing.",
+        "exampleTranslate": "Burung itu sedang bernyanyi.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "fish",
+        "phonetic": "/fɪʃ/",
+        "indonesian": "ikan",
+        "example": "The fish lives in water.",
+        "exampleTranslate": "Ikan itu hidup di air.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "lion",
+        "phonetic": "/ˈlaɪən/",
+        "indonesian": "singa",
+        "example": "The lion is the king of the jungle.",
+        "exampleTranslate": "Singa adalah raja hutan.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "tiger",
+        "phonetic": "/ˈtaɪɡə/",
+        "indonesian": "harimau",
+        "example": "The tiger hunts at night.",
+        "exampleTranslate": "Harimau berburu pada malam hari.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "elephant",
+        "phonetic": "/ˈelɪfənt/",
+        "indonesian": "gajah",
+        "example": "The elephant has a long trunk.",
+        "exampleTranslate": "Gajah itu memiliki belalai panjang.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "zebra",
+        "phonetic": "/ˈziːbrə/",
+        "indonesian": "zebra",
+        "example": "The zebra has black and white stripes.",
+        "exampleTranslate": "Zebra memiliki garis hitam dan putih.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "giraffe",
+        "phonetic": "/dʒɪˈrɑːf/",
+        "indonesian": "jerapah",
+        "example": "The giraffe has a long neck.",
+        "exampleTranslate": "Jerapah memiliki leher yang panjang.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "monkey",
+        "phonetic": "/ˈmʌŋki/",
+        "indonesian": "monyet",
+        "example": "The monkey climbs trees.",
+        "exampleTranslate": "Monyet itu memanjat pohon.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "bear",
+        "phonetic": "/beə/",
+        "indonesian": "beruang",
+        "example": "The bear lives in the forest.",
+        "exampleTranslate": "Beruang itu hidup di hutan.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "wolf",
+        "phonetic": "/wʊlf/",
+        "indonesian": "serigala",
+        "example": "The wolf howls at night.",
+        "exampleTranslate": "Serigala melolong di malam hari.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "fox",
+        "phonetic": "/fɒks/",
+        "indonesian": "rubah",
+        "example": "The fox is very clever.",
+        "exampleTranslate": "Rubah itu sangat cerdik.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "deer",
+        "phonetic": "/dɪə/",
+        "indonesian": "rusa",
+        "example": "The deer runs quickly.",
+        "exampleTranslate": "Rusa itu berlari cepat.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "rabbit",
+        "phonetic": "/ˈræbɪt/",
+        "indonesian": "kelinci",
+        "example": "The rabbit eats carrots.",
+        "exampleTranslate": "Kelinci itu memakan wortel.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "mouse",
+        "phonetic": "/maʊs/",
+        "indonesian": "tikus",
+        "example": "The mouse is very small.",
+        "exampleTranslate": "Tikus itu sangat kecil.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "rat",
+        "phonetic": "/ræt/",
+        "indonesian": "tikus besar",
+        "example": "The rat runs fast.",
+        "exampleTranslate": "Tikus besar itu berlari cepat.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "hamster",
+        "phonetic": "/ˈhæmstə/",
+        "indonesian": "hamster",
+        "example": "The hamster runs on a wheel.",
+        "exampleTranslate": "Hamster itu berlari di roda.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "squirrel",
+        "phonetic": "/ˈskwɪrəl/",
+        "indonesian": "tupai",
+        "example": "The squirrel collects nuts.",
+        "exampleTranslate": "Tupai itu mengumpulkan kacang.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "snake",
+        "phonetic": "/sneɪk/",
+        "indonesian": "ular",
+        "example": "The snake slithers on the ground.",
+        "exampleTranslate": "Ular itu melata di tanah.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "lizard",
+        "phonetic": "/ˈlɪzəd/",
+        "indonesian": "kadal",
+        "example": "The lizard is on the wall.",
+        "exampleTranslate": "Kadal itu ada di dinding.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "crocodile",
+        "phonetic": "/ˈkrɒkədaɪl/",
+        "indonesian": "buaya",
+        "example": "The crocodile lives in the river.",
+        "exampleTranslate": "Buaya itu hidup di sungai.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "turtle",
+        "phonetic": "/ˈtɜːtəl/",
+        "indonesian": "kura-kura",
+        "example": "The turtle moves slowly.",
+        "exampleTranslate": "Kura-kura bergerak lambat.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "frog",
+        "phonetic": "/frɒɡ/",
+        "indonesian": "katak",
+        "example": "The frog jumps high.",
+        "exampleTranslate": "Katak itu melompat tinggi.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "shark",
+        "phonetic": "/ʃɑːk/",
+        "indonesian": "hiu",
+        "example": "The shark swims fast.",
+        "exampleTranslate": "Hiu itu berenang cepat.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "whale",
+        "phonetic": "/weɪl/",
+        "indonesian": "paus",
+        "example": "The whale is very big.",
+        "exampleTranslate": "Paus itu sangat besar.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "dolphin",
+        "phonetic": "/ˈdɒlfɪn/",
+        "indonesian": "lumba-lumba",
+        "example": "The dolphin is very intelligent.",
+        "exampleTranslate": "Lumba-lumba itu sangat cerdas.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "octopus",
+        "phonetic": "/ˈɒktəpəs/",
+        "indonesian": "gurita",
+        "example": "The octopus has eight arms.",
+        "exampleTranslate": "Gurita memiliki delapan lengan.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "crab",
+        "phonetic": "/kræb/",
+        "indonesian": "kepiting",
+        "example": "The crab walks sideways.",
+        "exampleTranslate": "Kepiting berjalan menyamping.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "eagle",
+        "phonetic": "/ˈiːɡəl/",
+        "indonesian": "elang",
+        "example": "The eagle flies high.",
+        "exampleTranslate": "Elang terbang tinggi.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "owl",
+        "phonetic": "/aʊl/",
+        "indonesian": "burung hantu",
+        "example": "The owl hunts at night.",
+        "exampleTranslate": "Burung hantu berburu di malam hari.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "parrot",
+        "phonetic": "/ˈpærət/",
+        "indonesian": "burung beo",
+        "example": "The parrot can talk.",
+        "exampleTranslate": "Burung beo bisa berbicara.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "penguin",
+        "phonetic": "/ˈpeŋɡwɪn/",
+        "indonesian": "pinguin",
+        "example": "The penguin lives in cold places.",
+        "exampleTranslate": "Pinguin hidup di tempat dingin.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "kangaroo",
+        "phonetic": "/ˌkæŋɡəˈruː/",
+        "indonesian": "kanguru",
+        "example": "The kangaroo jumps far.",
+        "exampleTranslate": "Kanguru melompat jauh.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "camel",
+        "phonetic": "/ˈkæməl/",
+        "indonesian": "unta",
+        "example": "The camel lives in the desert.",
+        "exampleTranslate": "Unta hidup di gurun.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "hippopotamus",
+        "phonetic": "/ˌhɪpəˈpɒtəməs/",
+        "indonesian": "kuda nil",
+        "example": "The hippopotamus lives near rivers.",
+        "exampleTranslate": "Kuda nil hidup di dekat sungai.",
+        "topics": [
+            "animals"
+        ]
+    },
+    {
+        "word": "rhinoceros",
+        "phonetic": "/raɪˈnɒsərəs/",
+        "indonesian": "badak",
+        "example": "The rhinoceros has a horn.",
+        "exampleTranslate": "Badak memiliki cula.",
+        "topics": [
+            "animals"
+        ]
+    }
+]

@@ -1,0 +1,82 @@
+[
+    {
+        "word": "Tall",
+        "phonetic": "/tɔːl/",
+        "indonesian": "Tinggi",
+        "example": "He is a tall man.",
+        "exampleTranslate": "Dia adalah pria yang tinggi.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Short",
+        "phonetic": "/ʃɔːrt/",
+        "indonesian": "Pendek",
+        "example": "The girl is quite short.",
+        "exampleTranslate": "Gadis itu cukup pendek.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Beautiful",
+        "phonetic": "/ˈbjuːtɪfl/",
+        "indonesian": "Cantik",
+        "example": "She looks beautiful in that dress.",
+        "exampleTranslate": "Dia terlihat cantik dengan gaun itu.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Skinny",
+        "phonetic": "/ˈskɪni/",
+        "indonesian": "Kurus",
+        "example": "He has a skinny body.",
+        "exampleTranslate": "Dia memiliki tubuh yang kurus.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Fat",
+        "phonetic": "/fæt/",
+        "indonesian": "Gendut",
+        "example": "My cat is very fat and cute.",
+        "exampleTranslate": "Kucing saya sangat gendut dan lucu.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Curly hair",
+        "phonetic": "/ˈkɜːrli her/",
+        "indonesian": "Rambut keriting",
+        "example": "She has natural curly hair.",
+        "exampleTranslate": "Dia memiliki rambut keriting alami.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Short hair",
+        "phonetic": "/ʃɔːrt her/",
+        "indonesian": "Rambut pendek",
+        "example": "I want to cut my hair short.",
+        "exampleTranslate": "Saya ingin memotong rambut saya menjadi pendek.",
+        "topics": [
+            "physical_appearance"
+        ]
+    },
+    {
+        "word": "Long hair",
+        "phonetic": "/lɔːŋ her/",
+        "indonesian": "Rambut panjang",
+        "example": "Her long hair is very shiny.",
+        "exampleTranslate": "Rambut panjangnya sangat berkilau.",
+        "topics": [
+            "physical_appearance"
+        ]
+    }
+]

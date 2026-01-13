@@ -1,0 +1,82 @@
+[
+    {
+        "word": "Name",
+        "phonetic": "/neɪm/",
+        "indonesian": "Nama",
+        "example": "My name is John Doe.",
+        "exampleTranslate": "Nama saya adalah John Doe.",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Age",
+        "phonetic": "/eɪdʒ/",
+        "indonesian": "Umur / usia",
+        "example": "What is your age?",
+        "exampleTranslate": "Berapa usiamu?",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Nickname",
+        "phonetic": "/ˈnɪkneɪm/",
+        "indonesian": "Nama panggilan",
+        "example": "My nickname is Jack.",
+        "exampleTranslate": "Nama panggilan saya adalah Jack.",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Birthday",
+        "phonetic": "/ˈbɜːθdeɪ/",
+        "indonesian": "Hari lahir",
+        "example": "When is your birthday?",
+        "exampleTranslate": "Kapan hari lahirmu?",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Place of birth",
+        "phonetic": "/pleɪs əv bɜːθ/",
+        "indonesian": "Tempat lahir",
+        "example": "His place of birth is Jakarta.",
+        "exampleTranslate": "Tempat lahirnya adalah Jakarta.",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Hometown",
+        "phonetic": "/ˈhəʊmtaʊn/",
+        "indonesian": "Kampung halaman",
+        "example": "I am going back to my hometown.",
+        "exampleTranslate": "Saya akan pulang ke kampung halaman saya.",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Nationality",
+        "phonetic": "/ˌnæʃəˈnæləti/",
+        "indonesian": "Kebangsaan",
+        "example": "What is your nationality?",
+        "exampleTranslate": "Apa kebangsaanmu?",
+        "topics": [
+            "personal_information"
+        ]
+    },
+    {
+        "word": "Address",
+        "phonetic": "/əˈdres/",
+        "indonesian": "Alamat",
+        "example": "Write your address here.",
+        "exampleTranslate": "Tulis alamatmu di sini.",
+        "topics": [
+            "personal_information"
+        ]
+    }
+]

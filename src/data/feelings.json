@@ -1,0 +1,82 @@
+[
+    {
+        "word": "Happy",
+        "phonetic": "/ˈhæpi/",
+        "indonesian": "Senang",
+        "example": "I feel very happy today.",
+        "exampleTranslate": "Saya merasa sangat senang hari ini.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Sad",
+        "phonetic": "/sæd/",
+        "indonesian": "Sedih",
+        "example": "She is sad because she lost her book.",
+        "exampleTranslate": "Dia sedih karena dia kehilangan bukunya.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Excited",
+        "phonetic": "/ɪkˈsaɪtɪd/",
+        "indonesian": "Bersemangat",
+        "example": "The children are excited about the trip.",
+        "exampleTranslate": "Anak-anak bersemangat tentang perjalanan itu.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Nervous",
+        "phonetic": "/ˈnɜːrvəs/",
+        "indonesian": "Gugup",
+        "example": "I always feel nervous before an exam.",
+        "exampleTranslate": "Saya selalu merasa gugup sebelum ujian.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Proud",
+        "phonetic": "/praʊd/",
+        "indonesian": "Bangga",
+        "example": "My parents are proud of my grades.",
+        "exampleTranslate": "Orang tua saya bangga dengan nilai-nilai saya.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Angry",
+        "phonetic": "/ˈæŋɡri/",
+        "indonesian": "Marah",
+        "example": "He was angry because I was late.",
+        "exampleTranslate": "Dia marah karena saya terlambat.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Relaxed",
+        "phonetic": "/rɪˈlækst/",
+        "indonesian": "Santai",
+        "example": "I feel relaxed after a long holiday.",
+        "exampleTranslate": "Saya merasa santai setelah libur panjang.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    },
+    {
+        "word": "Motivated",
+        "phonetic": "/ˈməʊtɪveɪtɪd/",
+        "indonesian": "Termotivasi",
+        "example": "Good music makes me motivated to work.",
+        "exampleTranslate": "Musik yang bagus membuat saya termotivasi untuk bekerja.",
+        "topics": [
+            "feelings_and_emotions"
+        ]
+    }
+]
