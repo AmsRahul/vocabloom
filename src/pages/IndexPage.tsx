@@ -56,7 +56,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <div className="relative">
               <img
-                src="https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg"
+                src="/assets/images/person.webp"
                 alt="Avatar"
                 className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
               />
