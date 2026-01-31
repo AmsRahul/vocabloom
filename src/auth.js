@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export const handleRegister = async (email, password, nama) => {
@@ -9,7 +9,11 @@ export const handleRegister = async (email, password, nama) => {
       email,
       password
     );
+
     const user = userCredential.user;
+    await updateProfile(user, {
+      displayName: nama,
+    });
 
     // 2. Simpan Data Profil ke Firestore
     await setDoc(doc(db, "users", user.uid), {

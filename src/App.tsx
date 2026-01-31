@@ -23,6 +23,11 @@ import NewWordSession from "./pages/FlashCard";
 import SayIt from "./pages/SayIt";
 import ScrambledWordGame from "./pages/ScrambledGame";
 import QuizPage from "./pages/QuizGame";
+import ChapterManagement from "./pages/ChapterManagement";
+import SubChapterManagement from "./pages/SubChapterManagement";
+import VocabManagement from "./pages/VocabManagement";
+import AddChapterPage from "./pages/AddChapterPage";
+import AddSubChapterPage from "./pages/AddSubChapterPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,10 +42,41 @@ const App = () => (
             <Route path="/" element={<OnboardingPage />} />
             <Route path="/index" element={<Dashboard />} />
             <Route path="/chapter/:chapterId" element={<ChapterDetail />} />
+            {/* TEACHER ROUTES */}
+            {/* ================= TEACHER ROUTES ================= */}
+            <Route path="/teacher/chapter" element={<ChapterManagement />} />
+
+            {/* Add Chapter */}
+            <Route path="/teacher/chapter/add" element={<AddChapterPage />} />
+
+            {/* Detail Chapter → List Sub-Chapter */}
+            <Route
+              path="/teacher/chapter/:chapterId"
+              element={<SubChapterManagement />}
+            />
+
+            {/* Add Sub-Chapter */}
+            <Route
+              path="/teacher/chapter/:chapterId/sub/add"
+              element={<AddSubChapterPage />}
+            />
+
+            {/* List Vocab dalam Sub-Chapter */}
+            <Route
+              path="/teacher/chapter/:chapterId/sub/:subChapterId"
+              element={<VocabManagement />}
+            />
+
+            {/* Add Vocab */}
+            <Route
+              path="/teacher/chapter/:chapterId/sub/:subChapterId/vocab/add"
+              element={<AddVocabularyForm />}
+            />
+
             {/* <Route path="/matching" element={<MatchingGame />} /> */}
             <Route path="/flashcard/:courseId" element={<NewWordSession />} />
             <Route path="/matching/:topicId" element={<MatchingGame2 />} />
-            <Route path="/sayit/:topicId" element={<SayIt />} />
+            <Route path="/say-it/:topicId" element={<SayIt />} />
             <Route path="/quiz/:topicId" element={<QuizPage />} />
             <Route path="/scrambled/:topicId" element={<ScrambledWordGame />} />
             <Route path="/login" element={<LoginPage />} />

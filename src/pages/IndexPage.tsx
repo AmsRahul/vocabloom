@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Search, Settings, BookOpen, Lock } from "lucide-react"; // Tambahkan Lock
 import { Link } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth"; // 2. Import Firebase Auth
 
 const chapters = [
   {
@@ -48,6 +49,22 @@ const chapters = [
 ];
 
 const Dashboard = () => {
+  const [user, setUser] = useState(null);
+  
+  const auth = getAuth();
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser); // Simpan data user jika login
+      } else {
+        setUser(null); // Reset jika logout
+      }
+    });
+
+    // Cleanup subscription saat komponen tidak lagi digunakan
+    return () => unsubscribe();
+  }, [auth]);
+  
   return (
     <div className="min-h-screen bg-[#F9F9F9] flex justify-center p-4">
       <div className="w-full max-w-md flex flex-col">
@@ -63,7 +80,7 @@ const Dashboard = () => {
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 font-medium">Hello, Buddy!</p>
+              <p className="text-xs text-gray-400 font-medium">Hello, {user ? user.displayName : "Guest"}!</p>
               <h1 className="text-xl font-extrabold text-gray-800">
                 Let's Learn!
               </h1>

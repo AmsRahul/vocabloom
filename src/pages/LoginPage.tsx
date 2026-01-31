@@ -30,8 +30,7 @@ const LoginPage = () => {
 
       console.log("Login success:", userCredential.user);
 
-      // 👉 nanti bisa redirect
-      navigate("/dashboard");
+      navigate("/index");
     } catch (err) {
       switch (err.code) {
         case "auth/user-not-found":

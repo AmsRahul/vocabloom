@@ -11,6 +11,7 @@ import {
   query,
   where,
   limit,
+  updateDoc
 } from "firebase/firestore";
 import { db } from "@/firebase";
 
@@ -39,6 +40,8 @@ const ScrambledWordGame: React.FC = () => {
   const [answers, setAnswers] = useState<(LetterOption | null)[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<"idle" | "correct" | "wrong">("idle");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const currentVocab = allVocabs[currentIndex];
 
@@ -96,6 +99,34 @@ const ScrambledWordGame: React.FC = () => {
     );
     setStatus("idle");
   };
+  const updateProgressToSayIt = async () => {
+    try {
+      setIsUpdating(true);
+      const userId = "2hE606upFBgYTG496dkWhcb1Uy93"; // Sesuaikan UID
+      const progressDocRef = doc(
+        db,
+        "users",
+        userId,
+        "progress",
+        "about-me",
+        "sub_chapters",
+        "personal-info",
+      );
+
+      await updateDoc(progressDocRef, {
+        "activity.scrambled.completed": true,
+        "activity.sayit.unlocked": true, // 🔥 Membuka tantangan Speaking
+        lastActivity: "scrambled",
+        updatedAt: new Date(),
+      });
+
+      console.log("Progress updated: Say It Unlocked!");
+    } catch (error) {
+      console.error("Error updating progress:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // ===== HANDLERS =====
   const handleSelectLetter = (option: LetterOption) => {
@@ -128,28 +159,34 @@ const ScrambledWordGame: React.FC = () => {
     if (isCorrect) {
       setStatus("correct");
       speakWord(currentVocab.word);
-      setTimeout(() => {
+      setTimeout( async () => {
         if (currentIndex < allVocabs.length - 1) {
           const nextIdx = currentIndex + 1;
           setCurrentIndex(nextIdx);
           setupGame(allVocabs[nextIdx]);
         } else {
-          navigate("/chapter/about-me");
+          await updateProgressToSayIt();
+          setShowSuccess(true);
         }
       }, 2000);
     } else {
       setStatus("wrong");
+      if (navigator.vibrate) navigator.vibrate(200);
       setTimeout(() => setStatus("idle"), 1000);
     }
   };
 
-  if (loading || !currentVocab) {
+  if (loading || isUpdating)
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FDFDFB]">
-        <p className="font-bold text-gray-400">Loading game...</p>
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 2 }}
+        >
+          <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full" />
+        </motion.div>
       </div>
     );
-  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFB] flex justify-center p-4 font-sans antialiased">
@@ -173,6 +210,49 @@ const ScrambledWordGame: React.FC = () => {
           </button>
         </div>
 
+        {/* MODAL SUCCESS PINDAH KE SAY IT */}
+        <AnimatePresence>
+          {showSuccess && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-8 text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
+                className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center mb-6"
+              >
+                <Volume2 size={60} className="text-orange-500" />
+              </motion.div>
+
+              <h2 className="text-4xl font-black text-gray-800 mb-2">
+                Luar Biasa!
+              </h2>
+              <p className="text-gray-500 mb-8 font-medium">
+                Kamu sudah jago menyusun kata. Sekarang, mari coba ucapkan
+                kata-kata tersebut!
+              </p>
+
+              <div className="w-full space-y-3">
+                <button
+                  onClick={() => navigate("/say-it/personal-info")}
+                  className="w-full py-5 bg-orange-500 text-white font-black rounded-[28px] shadow-xl shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 transition-all"
+                >
+                  Lanjut ke Say It!
+                  <CheckCircle size={24} />
+                </button>
+                <button
+                  onClick={() => navigate("/chapter/about-me")}
+                  className="w-full py-4 text-gray-400 font-bold"
+                >
+                  Kembali ke Menu
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* CARD */}
         <motion.div
           key={currentIndex}
@@ -183,8 +263,8 @@ const ScrambledWordGame: React.FC = () => {
             status === "correct"
               ? "border-green-400"
               : status === "wrong"
-              ? "border-red-400"
-              : "border-transparent"
+                ? "border-red-400"
+                : "border-transparent"
           }`}
         >
           <div className="w-full aspect-square bg-gray-50 rounded-[32px] flex items-center justify-center p-4 mb-2">
@@ -219,8 +299,8 @@ const ScrambledWordGame: React.FC = () => {
                   status === "correct"
                     ? "border-green-500 text-green-600 bg-green-50 rounded-t-xl"
                     : letter
-                    ? "border-yellow-400 text-yellow-500 bg-yellow-50 rounded-t-xl"
-                    : "border-gray-200 text-transparent"
+                      ? "border-yellow-400 text-yellow-500 bg-yellow-50 rounded-t-xl"
+                      : "border-gray-200 text-transparent"
                 }`}
             >
               {letter?.char}
@@ -264,8 +344,8 @@ const ScrambledWordGame: React.FC = () => {
                 status === "correct"
                   ? "bg-green-500 text-white"
                   : answers.every(Boolean)
-                  ? "bg-yellow-400 text-gray-800 shadow-lg"
-                  : "bg-gray-200 text-gray-400"
+                    ? "bg-yellow-400 text-gray-800 shadow-lg"
+                    : "bg-gray-200 text-gray-400"
               }`}
           >
             {status === "correct" ? "Hebat!" : "Check Word"}

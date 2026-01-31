@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { Trophy, CheckCircle2, ArrowRight } from "lucide-react"; // Tambahkan icon baru
 import { motion, AnimatePresence } from "framer-motion";
 import {
   collection,
@@ -11,6 +12,7 @@ import {
   documentId,
   where,
   limit,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase";
 
@@ -22,10 +24,15 @@ type Vocab = {
   imageUrl?: string;
 };
 
+const API_KEY = "54425160-221f7d912071d99ee9aa423a1";
+
+
 const NewWordSession: React.FC = () => {
   const [vocabs, setVocabs] = useState<Vocab[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isFinished, setIsFinished] = useState(false); // 🔥 State baru untuk layar selesai
+  const [currentImg, setCurrentImg] = useState<string>(""); // State untuk gambar saat ini
   const navigate = useNavigate();
 
   // 🔥 SPEECH SYNTHESIS FUNCTION
@@ -37,12 +44,25 @@ const NewWordSession: React.FC = () => {
     window.speechSynthesis.speak(utterance);
   }, []);
 
+  const fetchPixabayImage = async (word) => {
+    try {
+      const response = await fetch(
+        `https://pixabay.com/api/?key=${API_KEY}&q=${encodeURIComponent(word)}&image_type=illustration&safesearch=true&per_page=3`,
+      );
+      const data = await response.json();
+      return data.hits.length > 0 ? data.hits[0].webformatURL : null;
+    } catch (error) {
+      console.error("Error fetching Pixabay:", error);
+      return null;
+    }
+  };
+
   // 🔥 FETCH VOCAB
   useEffect(() => {
     const fetchVocabs = async () => {
       try {
         const subDoc = await getDoc(
-          doc(db, `chapters/about me/sub_chapters/personal-info`)
+          doc(db, `chapters/about me/sub_chapters/personal-info`),
         );
         const ids = subDoc.data()?.vocab_ids || [];
 
@@ -54,7 +74,7 @@ const NewWordSession: React.FC = () => {
         const vocabQuery = query(
           collection(db, "vocabularies"),
           where(documentId(), "in", ids),
-          limit(10)
+          limit(10),
         );
         const snapshot = await getDocs(vocabQuery);
 
@@ -76,13 +96,53 @@ const NewWordSession: React.FC = () => {
 
   // 🔥 AUTO PLAY SUARA SAAT KARTU BERUBAH
   useEffect(() => {
-    if (!loading && vocabs.length > 0) {
-      const timer = setTimeout(() => {
-        speakWord(vocabs[currentIndex].word);
-      }, 500); // Tunggu animasi kartu selesai
-      return () => clearTimeout(timer);
+      if (!loading && vocabs.length > 0) {
+        const activeVocab = vocabs[currentIndex];
+  
+        // 1. Handle Voice
+        const timer = setTimeout(() => speakWord(activeVocab.word), 500);
+  
+        // 2. Handle Image
+        if (activeVocab.imageUrl) {
+          setCurrentImg(activeVocab.imageUrl);
+        } else {
+          // Jika tidak ada di DB, cari di Pixabay
+          fetchPixabayImage(activeVocab.word).then((url) => {
+            setCurrentImg(
+              url || `https://placehold.co/600x400?text=${activeVocab.word}`,
+            );
+          });
+        }
+  
+        return () => clearTimeout(timer);
+      }
+    }, [currentIndex, loading, vocabs, speakWord]);
+
+  const updateProgressToMatching = async () => {
+    try {
+      const userId = "2hE606upFBgYTG496dkWhcb1Uy93"; // Nantinya ambil dari auth
+      const progressDocRef = doc(
+        db,
+        "users",
+        userId,
+        "progress",
+        "about-me",
+        "sub_chapters",
+        "personal-info",
+      );
+
+      await updateDoc(progressDocRef, {
+        "activity.matching.unlocked": true,
+        "activity.flashcard.completed": true,
+        lastActivity: "flashcard",
+        updatedAt: new Date(), // Menyimpan waktu penyelesaian
+      });
+
+      console.log("Progress updated: Matching Unlocked!");
+    } catch (error) {
+      console.error("Error updating progress:", error);
     }
-  }, [currentIndex, loading, vocabs, speakWord]);
+  };
 
   if (loading) {
     return (
@@ -94,14 +154,76 @@ const NewWordSession: React.FC = () => {
     );
   }
 
+  if (isFinished) {
+    return (
+      <div className="min-h-screen bg-[#FDFDFB] flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-sm text-center"
+        >
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-yellow-200 blur-3xl rounded-full opacity-50" />
+            <div className="relative bg-white p-8 rounded-[40px] shadow-xl border-4 border-yellow-400">
+              <Trophy
+                size={80}
+                className="text-yellow-500 mx-auto"
+                strokeWidth={1.5}
+              />
+            </div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="absolute -bottom-2 -right-2 bg-green-500 text-white p-2 rounded-full border-4 border-[#FDFDFB]"
+            >
+              <CheckCircle2 size={24} />
+            </motion.div>
+          </div>
+
+          <h2 className="text-3xl font-black text-gray-800 mb-2">
+            Luar Biasa!
+          </h2>
+          <p className="text-gray-500 font-medium mb-10">
+            Kamu baru saja mempelajari{" "}
+            <span className="text-yellow-600 font-bold">
+              {vocabs.length} kata baru
+            </span>
+            . Siap untuk menguji ingatanmu?
+          </p>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => navigate(`/matching/personal-info`)} // 🔥 Lanjut ke Matching Word
+              className="w-full h-16 bg-gray-800 text-white font-black text-lg rounded-3xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl"
+            >
+              Lanjut ke Matching
+              <ArrowRight size={22} />
+            </button>
+
+            <button
+              onClick={() => navigate("/chapter/about-me")}
+              className="w-full h-14 bg-white text-gray-400 font-bold text-sm rounded-3xl flex items-center justify-center active:scale-95 transition-all border border-gray-100"
+            >
+              Kembali ke Menu
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   const vocab = vocabs[currentIndex];
   const progress = ((currentIndex + 1) / vocabs.length) * 100;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < vocabs.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
-      navigate("/chapter/about-me");
+      setLoading(true); // Opsional: beri loading sebentar saat save ke DB
+      await updateProgressToMatching();
+      setLoading(false);
+      setIsFinished(true); // 🔥 Aktifkan layar sukses
     }
   };
 
@@ -109,12 +231,12 @@ const NewWordSession: React.FC = () => {
     <div className="min-h-screen bg-[#FDFDFB] flex justify-center px-4 py-6 antialiased">
       <div className="w-full max-w-sm flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-2">
           <button
             onClick={() => navigate(-1)}
-            className="p-2.5 bg-white rounded-full border border-gray-100 shadow-sm active:scale-90 transition-transform"
+            className="p-2 bg-white rounded-full border border-gray-100 shadow-sm active:scale-90 transition-transform"
           >
-            <X size={20} />
+            <X size={16} />
           </button>
 
           <div className="text-center">
@@ -128,10 +250,10 @@ const NewWordSession: React.FC = () => {
         </div>
 
         {/* Progress */}
-        <div className="mb-10">
+        <div className="">
           <div className="flex justify-between items-end text-[11px] font-black mb-2">
             <span className="text-gray-400 uppercase tracking-tighter">
-              Progress Belajar
+              Total Card
             </span>
             <span className="text-yellow-500 bg-yellow-50 px-2 py-0.5 rounded-md">
               {currentIndex + 1} / {vocabs.length}
@@ -159,19 +281,16 @@ const NewWordSession: React.FC = () => {
               className="bg-white rounded-[40px] p-6 shadow-xl border border-gray-50 relative group"
             >
               {/* Image Container */}
-              <div className="aspect-[4/3] rounded-[30px] overflow-hidden mb-8 bg-gray-50 shadow-inner">
+              <div className="aspect-[4/3] rounded-[30px] overflow-hidden mb-6 bg-gray-50 shadow-inner">
                 <img
-                  src={
-                    vocab.imageUrl ||
-                    `https://placehold.co/600x400?text=${vocab.word}`
-                  }
+                  src={currentImg}
                   alt={vocab.word}
                   className="w-full h-full object-cover"
                 />
               </div>
 
               {/* Text Content */}
-              <div className="text-center space-y-2 pb-4">
+              <div className="text-center space-y-2">
                 <div className="flex items-center justify-center gap-3">
                   <h2 className="text-4xl font-black text-gray-800 tracking-tight">
                     {vocab.word}
@@ -200,7 +319,7 @@ const NewWordSession: React.FC = () => {
         </div>
 
         {/* Navigation Controls */}
-        <div className="flex gap-4 mt-12 pb-4">
+        <div className="flex gap-4">
           <button
             disabled={currentIndex === 0}
             onClick={() => setCurrentIndex((i) => i - 1)}
@@ -213,7 +332,7 @@ const NewWordSession: React.FC = () => {
             onClick={handleNext}
             className="flex-1 h-16 bg-yellow-400 text-gray-800 font-black text-xl rounded-3xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-yellow-100"
           >
-            {currentIndex === vocabs.length - 1 ? "Selesai" : "Lanjut"}
+            {currentIndex === vocabs.length - 1 ? "Finish" : "Next"}
             <ChevronRight size={24} strokeWidth={3} />
           </button>
         </div>
