@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Cropper from "react-easy-crop";
 import {
   ChevronLeft,
   Search,
@@ -28,8 +29,59 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
+// --- HELPER UNTUK PROSES CROP ---
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+  const image = new Image();
+  image.src = imageSrc;
+  await new Promise((resolve) => (image.onload = resolve));
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height,
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, "image/jpeg");
+  });
+};
+interface Vocabulary {
+  id: string;
+  createdAt?: { seconds: number; nanoseconds: number };
+  word?: string;
+  indonesian?: string;
+  imageUrl?: string;
+  phonetic?: string;
+  example?: string;
+  exampleTranslate?: string;
+}
+
+interface Vocabulary {
+  id: string;
+  createdAt?: { seconds: number; nanoseconds: number };
+  word?: string;
+  indonesian?: string;
+  imageUrl?: string;
+  phonetic?: string;
+  example?: string;
+  exampleTranslate?: string;
+}
+
 const VocabManagement = () => {
-  // --- KONFIGURASI CLOUDINARY ---
   const CLOUD_NAME = "dycak3ekf";
   const UPLOAD_PRESET = "vocab_upload";
 
@@ -39,7 +91,14 @@ const VocabManagement = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  const [imageFile, setImageFile] = useState(null);
+  // --- STATE KHUSUS CROPPER ---
+  const [tempImage, setTempImage] = useState(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // Ini hasil crop yang akan diupload
+
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -59,7 +118,6 @@ const VocabManagement = () => {
       setLoading(true);
       const subDoc = await getDoc(doc(db, subChapterPath));
       const ids = subDoc.data()?.vocab_ids || [];
-
       if (ids.length === 0) {
         setVocabs([]);
         return;
@@ -67,21 +125,21 @@ const VocabManagement = () => {
 
       const vocabQuery = query(
         collection(db, "vocabularies"),
-        where(documentId(), "in", ids),
+        where(documentId(), "in", ids.slice(0, 30)),
       );
 
       const snapshot = await getDocs(vocabQuery);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      }) as Vocabulary);
 
-      const sortedData = ids
-        .map((id) => data.find((item) => item.id === id))
-        .filter(Boolean);
-      setVocabs(sortedData);
+      const sortedByDate = data.sort(
+        (a, b) => b.createdAt?.seconds - a.createdAt?.seconds,
+      );
+      setVocabs(sortedByDate);
     } catch (error) {
-      console.error("Error fetching:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -91,57 +149,59 @@ const VocabManagement = () => {
     fetchVocabs();
   }, []);
 
-  // --- FUNGSI UPLOAD CLOUDINARY ---
   const uploadToCloudinary = async (file) => {
     const data = new FormData();
     data.append("file", file);
     data.append("upload_preset", UPLOAD_PRESET);
-
-    try {
-      const resp = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: data,
-        },
-      );
-      const fileData = await resp.json();
-      // Gunakan auto-optimization Cloudinary
-      return fileData.secure_url.replace(
-        "/upload/",
-        "/upload/f_auto,q_auto,w_600/",
-      );
-    } catch (error) {
-      console.error("Cloudinary Error:", error);
-      throw new Error("Gagal upload gambar");
-    }
+    const resp = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: data,
+      },
+    );
+    const fileData = await resp.json();
+    return fileData.secure_url.replace(
+      "/upload/",
+      "/upload/f_auto,q_auto,w_600/",
+    );
   };
 
+  // --- HANDLER FOTO ---
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = () => {
+        setTempImage(reader.result);
+        setIsCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
     }
   };
+
+  const onCropSave = useCallback(async () => {
+    try {
+      const croppedBlob = await getCroppedImg(tempImage, croppedAreaPixels);
+      setImageFile(croppedBlob);
+      setImagePreview(URL.createObjectURL(croppedBlob));
+      setIsCropModalOpen(false);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [tempImage, croppedAreaPixels]);
 
   const handleSaveVocab = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
       let finalImageUrl = formData.imageUrl;
-
       if (imageFile) {
         finalImageUrl = await uploadToCloudinary(imageFile);
       }
 
       const payload = {
-        word: formData.word,
-        phonetic: formData.phonetic,
-        indonesian: formData.indonesian,
-        example: formData.example,
-        exampleTranslate: formData.exampleTranslate,
+        ...formData,
         imageUrl: finalImageUrl,
         updatedAt: new Date(),
       };
@@ -153,41 +213,30 @@ const VocabManagement = () => {
           ...payload,
           createdAt: new Date(),
         });
-
-        const subChapterRef = doc(db, subChapterPath);
-        await updateDoc(subChapterRef, {
+        await updateDoc(doc(db, subChapterPath), {
           vocab_ids: arrayUnion(docRef.id),
         });
       }
-
       closeModal();
       fetchVocabs();
     } catch (error) {
-      console.error("Error saving:", error);
-      alert("Gagal menyimpan data.");
+      alert("Gagal menyimpan.");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus kata ini?")) return;
-
-    try {
-      const subChapterRef = doc(db, subChapterPath);
-      await updateDoc(subChapterRef, { vocab_ids: arrayRemove(id) });
-      await deleteDoc(doc(db, "vocabularies", id));
-      setVocabs((prev) => prev.filter((v) => v.id !== id));
-    } catch (error) {
-      console.error("Error deleting:", error);
-      alert("Gagal menghapus data.");
     }
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ word: "", phonetic: "", example: "", exampleTranslate: "", indonesian: "", imageUrl: "" });
+    setFormData({
+      word: "",
+      phonetic: "",
+      example: "",
+      exampleTranslate: "",
+      indonesian: "",
+      imageUrl: "",
+    });
     setImageFile(null);
     setImagePreview(null);
   };
@@ -206,8 +255,20 @@ const VocabManagement = () => {
     setIsModalOpen(true);
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Hapus kata ini?")) return;
+    try {
+      await updateDoc(doc(db, subChapterPath), { vocab_ids: arrayRemove(id) });
+      await deleteDoc(doc(db, "vocabularies", id));
+      setVocabs((prev) => prev.filter((v) => v.id !== id));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="bg-[#FAF9F6] min-h-screen pb-12 font-sans text-slate-800 relative">
+      {/* HEADER & MAIN BUTTON (Style Tetap) */}
       <header className="px-6 py-4 flex justify-between items-center bg-white shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <button className="p-2 bg-slate-100 rounded-full text-slate-600 active:scale-90 transition-transform">
@@ -242,7 +303,7 @@ const VocabManagement = () => {
             closeModal();
             setIsModalOpen(true);
           }}
-          className="w-full py-4 bg-[#F79432] hover:bg-[#E67E22] text-white rounded-[28px] font-black text-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-200 transition-all active:scale-95 mb-8"
+          className="w-full py-4 bg-[#F79432] hover:bg-[#E67E22] text-white rounded-[28px] font-black text-lg flex items-center justify-center gap-2 shadow-lg mb-8 transition-all active:scale-95"
         >
           <div className="bg-white/20 p-1 rounded-full">
             <Plus size={20} strokeWidth={4} />
@@ -263,15 +324,18 @@ const VocabManagement = () => {
                 className="bg-white rounded-[28px] p-5 shadow-sm border border-slate-50 flex items-center justify-between animate-in fade-in duration-500"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 overflow-hidden border border-orange-100">
+                  <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center overflow-hidden border border-orange-100">
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
-                        alt={item.word}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Languages size={28} strokeWidth={2.5} />
+                      <Languages
+                        className="text-orange-500"
+                        size={28}
+                        strokeWidth={2.5}
+                      />
                     )}
                   </div>
                   <div>
@@ -289,13 +353,13 @@ const VocabManagement = () => {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => openEditModal(item)}
-                    className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-blue-50 hover:text-blue-500 transition-colors"
+                    className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:text-blue-500 transition-colors"
                   >
                     <Pencil size={18} strokeWidth={3} />
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors"
+                    className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:text-red-500 transition-colors"
                   >
                     <Trash2 size={18} strokeWidth={3} />
                   </button>
@@ -306,7 +370,7 @@ const VocabManagement = () => {
         </div>
       </main>
 
-      {/* MODAL INPUT */}
+      {/* MODAL INPUT (Dengan animasi slide-in original) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-y-auto max-h-[90vh]">
@@ -323,7 +387,6 @@ const VocabManagement = () => {
             </div>
 
             <form onSubmit={handleSaveVocab} className="space-y-4">
-              {/* PHOTO SELECTOR */}
               <div className="flex flex-col items-center gap-2 mb-4">
                 <div
                   onClick={() => fileInputRef.current.click()}
@@ -356,6 +419,7 @@ const VocabManagement = () => {
                 />
               </div>
 
+              {/* INPUT FIELDS */}
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">
                   Kata (English)
@@ -363,8 +427,7 @@ const VocabManagement = () => {
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none font-bold"
-                  placeholder="e.g. Grateful"
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 outline-none font-bold focus:ring-2 focus:ring-orange-500"
                   value={formData.word}
                   onChange={(e) =>
                     setFormData({ ...formData, word: e.target.value })
@@ -377,8 +440,7 @@ const VocabManagement = () => {
                 </label>
                 <input
                   type="text"
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none font-bold"
-                  placeholder="e.g. /ˈɡreɪtfəl/"
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 outline-none font-bold focus:ring-2 focus:ring-orange-500"
                   value={formData.phonetic}
                   onChange={(e) =>
                     setFormData({ ...formData, phonetic: e.target.value })
@@ -392,15 +454,13 @@ const VocabManagement = () => {
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none font-bold"
-                  placeholder="e.g. Bersyukur"
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 outline-none font-bold focus:ring-2 focus:ring-orange-500"
                   value={formData.indonesian}
                   onChange={(e) =>
                     setFormData({ ...formData, indonesian: e.target.value })
                   }
                 />
               </div>
-             
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">
                   Example
@@ -408,8 +468,7 @@ const VocabManagement = () => {
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none font-bold"
-                  placeholder="e.g. My name is Raka"
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 outline-none font-bold focus:ring-2 focus:ring-orange-500"
                   value={formData.example}
                   onChange={(e) =>
                     setFormData({ ...formData, example: e.target.value })
@@ -423,11 +482,13 @@ const VocabManagement = () => {
                 <input
                   type="text"
                   required
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none font-bold"
-                  placeholder="e.g. Nama saya Raka"
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 outline-none font-bold focus:ring-2 focus:ring-orange-500"
                   value={formData.exampleTranslate}
                   onChange={(e) =>
-                    setFormData({ ...formData, exampleTranslate: e.target.value })
+                    setFormData({
+                      ...formData,
+                      exampleTranslate: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -435,7 +496,7 @@ const VocabManagement = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-lg mt-4 disabled:opacity-50 active:scale-95 transition-all shadow-lg"
+                className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-lg mt-4 shadow-lg disabled:opacity-50 active:scale-95 transition-all"
               >
                 {isSubmitting
                   ? "Menyimpan..."
@@ -445,6 +506,41 @@ const VocabManagement = () => {
               </button>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* MODAL CROPPER (Layer Tambahan) */}
+      {isCropModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/90 z-[60] flex flex-col items-center justify-center p-6 backdrop-blur-md">
+          <div className="relative w-full max-w-md aspect-square bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10">
+            <Cropper
+              image={tempImage}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+            />
+          </div>
+
+          <div className="mt-8 w-full max-w-md flex gap-4">
+            <button
+              onClick={() => setIsCropModalOpen(false)}
+              className="flex-1 py-4 bg-white/10 text-white rounded-2xl font-black hover:bg-white/20 transition-all"
+            >
+              BATAL
+            </button>
+            <button
+              onClick={onCropSave}
+              className="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-black shadow-lg shadow-orange-500/30 active:scale-95 transition-all"
+            >
+              TERAPKAN
+            </button>
+          </div>
+          <p className="text-white/40 text-[10px] font-bold uppercase mt-4 tracking-widest text-center">
+            Geser dan cubit gambar untuk menyesuaikan
+          </p>
         </div>
       )}
     </div>
