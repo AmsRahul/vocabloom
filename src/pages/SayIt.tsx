@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Mic, Volume2, ArrowRight, Pause, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Mic, ArrowRight, Pause, CheckCircle2, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   collection,
@@ -10,19 +10,13 @@ import {
   query,
   where,
   limit,
-  updateDoc,
-  setDoc,
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/firebase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { completeActivity, checkAndUnlockNextSubChapter, XP_REWARDS, checkActivityAccess } from "@/progress";
 
-// ================= TYPES & BROWSER DECLARATIONS =================
-
-/**
- * Mendefinisikan interface SpeechRecognition secara manual
- * agar TypeScript mengenalinya meskipun tidak ada di lib.dom standar.
- */
 interface SpeechRecognitionInstance extends EventTarget {
   lang: string;
   interimResults: boolean;
@@ -32,29 +26,22 @@ interface SpeechRecognitionInstance extends EventTarget {
   stop(): void;
   abort(): void;
   onresult: (event: SpeechRecognitionEvent) => void;
-  onend: (event: Event) => void;
+  onend: () => void;
   onerror: (event: Event) => void;
 }
 
 interface SpeechRecognitionEvent extends Event {
   results: {
     [key: number]: {
-      [key: number]: {
-        transcript: string;
-      };
+      [key: number]: { transcript: string };
     };
   };
 }
 
-// Menambahkan constructor ke objek Window
 declare global {
   interface Window {
-    SpeechRecognition: {
-      new (): SpeechRecognitionInstance;
-    };
-    webkitSpeechRecognition: {
-      new (): SpeechRecognitionInstance;
-    };
+    SpeechRecognition: { new (): SpeechRecognitionInstance };
+    webkitSpeechRecognition: { new (): SpeechRecognitionInstance };
   }
 }
 
@@ -64,7 +51,6 @@ interface Vocab {
   indonesian: string;
   phonetic?: string;
   imageUrl?: string;
-  audioUrl?: string;
 }
 
 interface TopicItemData {
@@ -72,136 +58,67 @@ interface TopicItemData {
   title: string;
   sub: string;
   order: number;
-  locked?: boolean;
 }
 
-
-// ================= COMPONENT =================
-
 const SayIt: React.FC = () => {
+  const { chapterId, topicId } = useParams<{ chapterId: string; topicId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
   const [vocabs, setVocabs] = useState<Vocab[]>([]);
   const [index, setIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [topics, setTopics] = useState<TopicItemData[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [earnedXp, setEarnedXp] = useState(0);
+  const [allSubChapters, setAllSubChapters] = useState<string[]>([]);
 
-  // Menggunakan interface yang baru dibuat
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const vocab = vocabs[index];
 
-  const completeSubChapter = async () => {
-    try {
-      setIsUpdating(true);
-      const userId = "2hE606upFBgYTG496dkWhcb1Uy93"; // Gunakan Auth UID asli
-      const currentSubId = "personal-info"; // ID sub-chapter saat ini
-
-      // 1. Update sub-chapter saat ini menjadi completed
-      const currentRef = doc(
-        db,
-        "users",
-        userId,
-        "progress",
-        "about-me",
-        "sub_chapters",
-        currentSubId,
-      );
-
-      await updateDoc(currentRef, {
-        "activity.sayit.completed": true,
-        status: "completed",
-        completedAt: new Date(),
-      });
-
-      // 2. Cari Sub-chapter berikutnya berdasarkan urutan (order)
-      // Mencari index dari sub-chapter yang sekarang sedang dimainkan
-
-      const currentIndex = topics.findIndex((t) => t.id === currentSubId);
-      // Note: Pastikan state `vocabs` atau `topics` tersedia di sini
-      const nextTopic = vocabs[currentIndex + 1];
-
-      if (nextTopic) {
-        // Jika ada topik selanjutnya, buka gemboknya
-        const nextSubRef = doc(
-          db,
-          "users",
-          userId,
-          "progress",
-          "about-me",
-          "sub_chapters",
-          nextTopic.id, // ID dinamis dari Firestore
-        );
-
-        await setDoc(
-          nextSubRef,
-          {
-            status: "unlocked",
-            activity: {
-              flashcard: { unlocked: true, completed: false },
-              matching: { unlocked: false, completed: false },
-              quiz: { unlocked: false, completed: false },
-              scramble: { unlocked: false, completed: false },
-              sayit: { unlocked: false, completed: false },
-            },
-          },
-          { merge: true },
-        );
-
-        console.log(`Next sub-chapter unlocked: ${nextTopic.id}`);
-      } else {
-        console.log("Ini adalah sub-chapter terakhir di chapter ini.");
+  useEffect(() => {
+    if (!user || !chapterId || !topicId) return;
+    checkActivityAccess(user.uid, chapterId, topicId, "sayit").then((hasAccess) => {
+      if (!hasAccess) {
+        navigate(`/scrambled/${chapterId}/${topicId}`);
       }
-    } catch (error) {
-      console.error("Error updating sequence progress:", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    });
+  }, [user, chapterId, topicId, navigate]);
 
-  /* ================= FETCH DATA ================= */
+  const speakWord = useCallback((text: string) => {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); // Mulai loading di awal
       try {
-        // 1. Ambil Data Topics terlebih dahulu
         const topicsQuery = query(
           collection(db, "chapters", "about me", "sub_chapters"),
-          orderBy("order", "asc"),
+          orderBy("order", "asc")
         );
         const topicsSnapshot = await getDocs(topicsQuery);
-        const topicsData = topicsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as TopicItemData[];
+        const topicsData = topicsSnapshot.docs.map((d) => d.id);
+        setAllSubChapters(topicsData);
 
-        // Simpan ke state agar UI terupdate
-        setTopics(topicsData);
-
-        // 3. Ambil data Vocabularies berdasarkan ID tertentu
-        const subDocRef = doc(
-          db,
-          "chapters",
-          "about me",
-          "sub_chapters",
-          "personal-info",
-        );
-        const subDoc = await getDoc(subDocRef);
+        if (!topicId) return;
+        const subDoc = await getDoc(doc(db, `chapters/about me/sub_chapters/${topicId}`));
         const ids = subDoc.data()?.vocab_ids || [];
 
         if (ids.length === 0) {
-          setVocabs([]); // Kosongkan jika tidak ada ID
+          setVocabs([]);
           return;
         }
 
-        // Firebase 'in' query maksimal 10 IDs (cocok dengan limit(10) kamu)
         const vocabQuery = query(
           collection(db, "vocabularies"),
-          where(documentId(), "in", ids),
-          limit(10),
+          where(documentId(), "in", ids)
         );
 
         const vocabSnap = await getDocs(vocabQuery);
@@ -219,9 +136,8 @@ const SayIt: React.FC = () => {
     };
 
     fetchData();
-  }, []); // Pastikan dependency array sesuai kebutuhan
+  }, [topicId]);
 
-  /* ================= SPEECH SETUP ================= */
   useEffect(() => {
     const SpeechRecognitionConstructor =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -238,6 +154,7 @@ const SayIt: React.FC = () => {
 
       if (spoken.includes(vocab.word.toLowerCase())) {
         setIsCorrect(true);
+        speakWord(vocab.word);
       }
     };
 
@@ -247,9 +164,16 @@ const SayIt: React.FC = () => {
     return () => {
       recognition.stop();
     };
-  }, [vocab]);
+  }, [vocab, speakWord]);
 
-  /* ================= ACTIONS ================= */
+  const handleFinish = async () => {
+    if (!user || !chapterId || !topicId) return;
+    const xpEarned = await completeActivity(user.uid, chapterId, topicId, "sayit", 100);
+    await checkAndUnlockNextSubChapter(user.uid, chapterId, topicId, allSubChapters);
+    setEarnedXp(xpEarned);
+    setShowSuccess(true);
+  };
+
   const startRecording = () => {
     if (isCorrect) return;
     setTranscript("");
@@ -262,19 +186,13 @@ const SayIt: React.FC = () => {
     }
   };
 
-  const playAudio = () => {
-    if (!vocab?.audioUrl) return;
-    const audio = new Audio(vocab.audioUrl);
-    audio.play();
-  };
-
   const nextWord = () => {
     if (index < vocabs.length - 1) {
       setIndex((i) => i + 1);
       setIsCorrect(false);
       setTranscript("");
     } else {
-      navigate("/chapters/about-me");
+      handleFinish();
     }
   };
 
@@ -296,24 +214,23 @@ const SayIt: React.FC = () => {
     );
   }
 
-  const image =
-    vocab.imageUrl || `https://placehold.co/400x400?text=vocab-image`;
+  const image = vocab.imageUrl || `https://placehold.co/400x400?text=${vocab.word}`;
 
   return (
     <div className="w-full max-w-md bg-[#FAF9F6] rounded-[40px] shadow-2xl overflow-hidden flex flex-col border border-white">
-      {/* HEADER */}
       <div className="px-6 pt-8 pb-4 flex items-center justify-between">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/chapter/${chapterId}`)}
           className="p-2 bg-black rounded-full text-white active:scale-90 transition-transform"
         >
           <Pause size={16} fill="currentColor" />
         </button>
         <h2 className="font-black text-[#1E293B] text-lg">Say It!</h2>
-        <div className="w-10" />
+        <button onClick={() => speakWord(vocab.word)} className="p-2 bg-yellow-100 rounded-full text-yellow-600">
+          <Volume2 size={20} />
+        </button>
       </div>
 
-      {/* PROGRESS BAR */}
       <div className="px-8 mb-6">
         <p className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">
           Word {index + 1} of {vocabs.length}
@@ -327,7 +244,6 @@ const SayIt: React.FC = () => {
         </div>
       </div>
 
-      {/* CARD SECTION */}
       <div className="px-8 mb-6">
         <AnimatePresence mode="wait">
           <motion.div
@@ -348,7 +264,6 @@ const SayIt: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* QUESTION TEXT */}
       <div className="text-center mb-4 px-6">
         <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
           Terjemahkan ke Bahasa Inggris:
@@ -356,9 +271,6 @@ const SayIt: React.FC = () => {
         <h1 className="text-4xl font-black text-[#1E293B] mt-1 capitalize">
           {vocab.indonesian}
         </h1>
-        {/* {vocab.phonetic && (
-            <p className="text-gray-400 font-medium mt-1">[{vocab.phonetic}]</p>
-          )} */}
 
         <div className="h-16 mt-4 flex items-center justify-center">
           {transcript && (
@@ -377,7 +289,44 @@ const SayIt: React.FC = () => {
         </div>
       </div>
 
-      {/* MIC & ACTION */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-white/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center mb-6"
+            >
+              <CheckCircle2 size={60} className="text-green-500" />
+            </motion.div>
+
+            <h2 className="text-4xl font-black text-gray-800 mb-2">
+              Selamat!
+            </h2>
+            <p className="text-gray-500 mb-4 font-medium">
+              Kamu sudah menyelesaikan semua tantangan!
+            </p>
+            <div className="bg-green-50 text-green-600 font-bold text-xl px-4 py-2 rounded-xl inline-block mb-8">
+              +{earnedXp || XP_REWARDS.sayit} XP
+            </div>
+
+            <div className="w-full space-y-3">
+              <button
+                onClick={() => navigate(`/chapter/${chapterId}`)}
+                className="w-full py-5 bg-yellow-400 text-gray-800 font-black rounded-[28px] shadow-xl shadow-yellow-100 flex items-center justify-center gap-3 active:scale-95 transition-all"
+              >
+                Kembali ke Menu
+                <ArrowRight size={24} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col items-center gap-8 pb-10 mt-auto">
         <div className="relative">
           {isRecording && (
@@ -396,13 +345,13 @@ const SayIt: React.FC = () => {
             onClick={startRecording}
             disabled={isCorrect}
             className={`w-24 h-24 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 relative z-10
-                ${
-                  isCorrect
-                    ? "bg-green-500 text-white"
-                    : "bg-yellow-400 text-gray-800 active:scale-90"
-                }
-                ${isRecording ? "scale-110" : ""}
-              `}
+              ${
+                isCorrect
+                  ? "bg-green-500 text-white"
+                  : "bg-yellow-400 text-gray-800 active:scale-90"
+              }
+              ${isRecording ? "scale-110" : ""}
+            `}
           >
             {isCorrect ? <CheckCircle2 size={48} /> : <Mic size={40} />}
           </button>

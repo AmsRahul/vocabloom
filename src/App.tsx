@@ -11,13 +11,12 @@ import NotFound from "./pages/NotFound";
 import OnboardingPage from "./pages/OnboardingPages";
 import VocabularyList from "./pages/TestFirebase";
 import AddVocabularyForm from "./components/AddVocabularyForm";
-import ImportVocab from "./pages/ImportVocab";
+// import ImportVocab from "./pages/ImportVocab";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Dashboard from "./pages/IndexPage";
 import ChapterDetail from "./pages/ChapterDetail";
-import MatchingGame from "./pages/MatchingGame2";
 import MatchingGame2 from "./pages/MatchingGame3";
 import NewWordSession from "./pages/FlashCard";
 import SayIt from "./pages/SayIt";
@@ -74,11 +73,11 @@ const App = () => (
             />
 
             {/* <Route path="/matching" element={<MatchingGame />} /> */}
-            <Route path="/flashcard/:courseId" element={<NewWordSession />} />
-            <Route path="/matching/:topicId" element={<MatchingGame2 />} />
-            <Route path="/say-it/:topicId" element={<SayIt />} />
-            <Route path="/quiz/:topicId" element={<QuizPage />} />
-            <Route path="/scrambled/:topicId" element={<ScrambledWordGame />} />
+            <Route path="/flashcard/:chapterId/:topicId" element={<NewWordSession />} />
+            <Route path="/matching/:chapterId/:topicId" element={<MatchingGame2 />} />
+            <Route path="/say-it/:chapterId/:topicId" element={<SayIt />} />
+            <Route path="/quiz/:chapterId/:topicId" element={<QuizPage />} />
+            <Route path="/scrambled/:chapterId/:topicId" element={<ScrambledWordGame />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
@@ -110,14 +109,7 @@ const App = () => (
               }
             />
 
-            <Route
-              path="/importAnimals"
-              element={
-                <ProtectedRoute>
-                  <ImportVocab />
-                </ProtectedRoute>
-              }
-            />
+          
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />

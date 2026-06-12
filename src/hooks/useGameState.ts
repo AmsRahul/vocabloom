@@ -1,4 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface GameState {
   totalPoints: number;
@@ -20,24 +22,47 @@ const INITIAL_STATE: GameState = {
   unlockedBadges: [],
 };
 
-export const useGameState = () => {
-  const [gameState, setGameState] = useState<GameState>(() => {
+export const useGameState = (uid?: string | null) => {
+  const [gameState, setGameState] = useState<GameState>(INITIAL_STATE);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
     const saved = localStorage.getItem('vocabBuilder_gameState');
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
-  });
+    if (saved) {
+      setGameState(JSON.parse(saved));
+    }
+    setIsLoading(false);
+  }, []);
 
   const saveState = useCallback((newState: GameState) => {
     localStorage.setItem('vocabBuilder_gameState', JSON.stringify(newState));
     setGameState(newState);
   }, []);
 
+  const syncToFirebase = useCallback(async (updates: Partial<GameState>) => {
+    if (!uid) return;
+    try {
+      const updateObj: Record<string, any> = {};
+      if (updates.totalPoints !== undefined) updateObj.totalXp = increment(updates.totalPoints);
+      if (updates.currentStreak !== undefined) updateObj.currentStreak = updates.currentStreak;
+      if (updates.longestStreak !== undefined) updateObj.longestStreak = updates.longestStreak;
+      if (updates.quizzesCompleted !== undefined) updateObj['stats.totalQuizzes'] = increment(1);
+      if (Object.keys(updateObj).length > 0) {
+        await updateDoc(doc(db, 'users', uid), updateObj);
+      }
+    } catch (error) {
+      console.error('Error syncing to Firebase:', error);
+    }
+  }, [uid]);
+
   const addPoints = useCallback((points: number) => {
     setGameState(prev => {
       const newState = { ...prev, totalPoints: prev.totalPoints + points };
       saveState(newState);
+      syncToFirebase({ totalPoints: points });
       return newState;
     });
-  }, [saveState]);
+  }, [saveState, syncToFirebase]);
 
   const incrementWordsLearned = useCallback((count: number = 1) => {
     setGameState(prev => {
@@ -51,9 +76,10 @@ export const useGameState = () => {
     setGameState(prev => {
       const newState = { ...prev, quizzesCompleted: prev.quizzesCompleted + 1 };
       saveState(newState);
+      syncToFirebase({ quizzesCompleted: 1 });
       return newState;
     });
-  }, [saveState]);
+  }, [saveState, syncToFirebase]);
 
   const completePronunciation = useCallback(() => {
     setGameState(prev => {
@@ -76,13 +102,23 @@ export const useGameState = () => {
     saveState(INITIAL_STATE);
   }, [saveState]);
 
+  const syncProgress = useCallback((firebaseData: Partial<GameState>) => {
+    setGameState(prev => {
+      const newState = { ...prev, ...firebaseData };
+      saveState(newState);
+      return newState;
+    });
+  }, [saveState]);
+
   return {
     ...gameState,
+    isLoading,
     addPoints,
     incrementWordsLearned,
     completeQuiz,
     completePronunciation,
     unlockBadge,
     resetProgress,
+    syncProgress,
   };
 };

@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { HomeScreen } from '@/components/screens/HomeScreen';
 import { LessonScreen } from '@/components/screens/LessonScreen';
 import { AchievementsScreen } from '@/components/screens/AchievementsScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
 import { useGameState } from '@/hooks/useGameState';
+import { useAuth } from '@/context/AuthContext';
 import { VocabularySet } from '@/data/vocabulary';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 
 const Index = () => {
+  const { user, userProgress } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [selectedSet, setSelectedSet] = useState<VocabularySet | null>(null);
   
@@ -25,7 +27,20 @@ const Index = () => {
     completeQuiz,
     unlockBadge,
     resetProgress,
-  } = useGameState();
+    syncProgress,
+  } = useGameState(user?.uid);
+
+  useEffect(() => {
+    if (userProgress) {
+      syncProgress({
+        totalPoints: userProgress.totalXp,
+        currentStreak: userProgress.currentStreak,
+        wordsLearned: userProgress.completedLessons?.length || 0,
+        quizzesCompleted: userProgress.stats?.totalQuizzes || 0,
+        unlockedBadges: userProgress.achievements || [],
+      });
+    }
+  }, [userProgress, syncProgress]);
 
   const handleSelectSet = (set: VocabularySet) => {
     setSelectedSet(set);
@@ -40,7 +55,6 @@ const Index = () => {
     completeQuiz();
     incrementWordsLearned(5);
 
-    // Check for badge unlocks
     if (quizzesCompleted === 0) {
       unlockBadge('first-quiz');
       toast.success('🌟 Lencana baru: Pemula!', {
@@ -63,17 +77,13 @@ const Index = () => {
     });
   };
 
-  // Show lesson screen if a set is selected
   if (selectedSet) {
     return (
-      <>
-        {/* <Toaster position="top-center" /> */}
-        <LessonScreen
-          set={selectedSet}
-          onBack={handleBackFromLesson}
-          onComplete={handleLessonComplete}
-        />
-      </>
+      <LessonScreen
+        set={selectedSet}
+        onBack={handleBackFromLesson}
+        onComplete={handleLessonComplete}
+      />
     );
   }
 

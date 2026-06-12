@@ -46,7 +46,7 @@ export default function OnboardingPage() {
         {/* Action Button */}
         <div className="mt-8">
           <button
-            onClick={() => navigate("/index")}
+            onClick={() => navigate("/login")}
             className="w-full bg-white text-orange-600 font-black text-lg py-5 rounded-3xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:bg-orange-50 hover:shadow-xl active:scale-95 transition-all duration-200"
           >
             Get Started

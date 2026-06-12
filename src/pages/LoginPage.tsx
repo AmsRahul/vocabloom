@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { handleLogin, getFirebaseErrorMessage } from "../auth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -12,39 +11,22 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
     if (!email || !password) {
       setError("Email dan password wajib diisi");
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      console.log("Login success:", userCredential.user);
-
+      await handleLogin(email, password);
       navigate("/index");
     } catch (err) {
-      switch (err.code) {
-        case "auth/user-not-found":
-          setError("Akun tidak ditemukan");
-          break;
-        case "auth/wrong-password":
-          setError("Password salah");
-          break;
-        case "auth/invalid-email":
-          setError("Format email tidak valid");
-          break;
-        default:
-          setError("Gagal login, coba lagi");
-      }
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -53,7 +35,6 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-[40px] shadow-xl w-full max-w-sm p-8 flex flex-col items-center">
-        {/* Logo */}
         <div className="bg-gray-50 rounded-3xl p-4 mb-6 w-full flex justify-center">
           <img
             src="/assets/images/owl.jpg"
@@ -67,15 +48,13 @@ const LoginPage = () => {
           Ready to learn some new words today?
         </p>
 
-        {/* Error Message */}
         {error && (
           <div className="w-full bg-red-50 text-red-600 text-sm px-4 py-2 rounded-xl mb-4 text-center">
             {error}
           </div>
         )}
 
-        <div className="w-full space-y-4">
-          {/* Email */}
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -83,11 +62,11 @@ const LoginPage = () => {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               className="w-full border border-gray-200 rounded-full py-4 pl-12 pr-4 focus:ring-2 focus:ring-yellow-400 outline-none"
             />
           </div>
 
-          {/* Password */}
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -95,6 +74,7 @@ const LoginPage = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               className="w-full border border-gray-200 rounded-full py-4 pl-12 pr-12 focus:ring-2 focus:ring-yellow-400 outline-none"
             />
             <button
@@ -106,28 +86,41 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Forgot */}
           <div className="flex justify-end">
-            <button className="text-xs text-gray-400 hover:text-gray-600">
+            <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-gray-600">
               Forgot Password?
-            </button>
+            </Link>
           </div>
 
-          {/* Button */}
           <button
-            onClick={handleLogin}
+            type="submit"
             disabled={loading}
-            className={`w-full py-4 rounded-full font-bold flex items-center justify-center gap-2 transition
-              ${
-                loading
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-[#f4c430] hover:bg-[#e5b82d] active:scale-95"
-              }`}
+            className={`w-full py-4 rounded-full font-bold flex items-center justify-center gap-2 transition ${
+              loading
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-[#f4c430] hover:bg-[#e5b82d] active:scale-95"
+            }`}
           >
-            {loading ? "Signing in..." : "Start Learning"}
-            {!loading && <ArrowRight size={20} />}
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                Signing in...
+              </>
+            ) : (
+              <>
+                Start Learning
+                <ArrowRight size={20} />
+              </>
+            )}
           </button>
-        </div>
+        </form>
+
+        {/* <p className="text-center text-gray-400 text-sm mt-4">
+          Don&apos;t have an account?{" "}
+          <Link to="/register" className="text-gray-800 font-bold hover:underline">
+            Sign up
+          </Link>
+        </p> */}
       </div>
     </div>
   );

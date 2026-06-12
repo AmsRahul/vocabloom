@@ -18,11 +18,11 @@ import {
   query,
   where,
   limit,
-  updateDoc
 } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { completeActivity, unlockNextActivity, XP_REWARDS, checkActivityAccess } from "@/progress";
 
-// ================= TYPES =================
 interface Vocab {
   word: string;
   indonesian: string;
@@ -36,9 +36,7 @@ interface QuizQuestion {
   image?: string;
 }
 
-// ================= HELPERS =================
-const shuffle = <T,>(array: T[]): T[] =>
-  [...array].sort(() => Math.random() - 0.5);
+const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
 
 const generateQuiz = (vocabs: Vocab[]): QuizQuestion[] =>
   vocabs.map((vocab) => {
@@ -56,66 +54,46 @@ const generateQuiz = (vocabs: Vocab[]): QuizQuestion[] =>
     };
   });
 
-// ================= COMPONENT =================
 const QuizPage: React.FC = () => {
+  const { chapterId, topicId } = useParams<{ chapterId: string; topicId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "correct" | "wrong">("idle");
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3); // Menambahkan state untuk nyawa
+  const [lives, setLives] = useState(3);
   const [gameOver, setGameOver] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isFinished, setIsFinished] = useState(false); // State untuk layar sukses akhir
+  const [isFinished, setIsFinished] = useState(false);
+  const [earnedXp, setEarnedXp] = useState(0);
 
   const currentQuestion = quiz[currentIndex];
-  const updateProgressToScramble = async () => {
-    try {
-      setIsUpdating(true);
-      const userId = "2hE606upFBgYTG496dkWhcb1Uy93"; // Ganti dengan Auth UID
-      const progressDocRef = doc(
-        db,
-        "users",
-        userId,
-        "progress",
-        "about-me",
-        "sub_chapters",
-        "personal-info",
-      );
 
-      await updateDoc(progressDocRef, {
-        "activity.quiz.completed": true,
-        "activity.scrambled.unlocked": true, // 🔥 Membuka tahap Scramble Word
-        lastActivity: "quiz",
-        updatedAt: new Date(),
-      });
+  useEffect(() => {
+    if (!user || !chapterId || !topicId) return;
+    checkActivityAccess(user.uid, chapterId, topicId, "quiz").then((hasAccess) => {
+      if (!hasAccess) {
+        navigate(`/matching/${chapterId}/${topicId}`);
+      }
+    });
+  }, [user, chapterId, topicId, navigate]);
 
-      console.log("Progress updated: Scramble Word Unlocked!");
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  /* ================= FETCH DATA ================= */
   useEffect(() => {
     const fetchVocabs = async () => {
+      if (!chapterId || !topicId) return;
       try {
-        const subDoc = await getDoc(
-          doc(db, `chapters/about me/sub_chapters/personal-info`),
-        );
+        const subDoc = await getDoc(doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`));
         const ids = subDoc.data()?.vocab_ids || [];
 
         const vocabQuery = query(
           collection(db, "vocabularies"),
-          where(documentId(), "in", ids),
-          limit(10),
+          where(documentId(), "in", ids)
         );
         const snapshot = await getDocs(vocabQuery);
-        const vocabsData = snapshot.docs.map((doc) => doc.data() as Vocab);
+        const vocabsData = snapshot.docs.map((d) => d.data() as Vocab);
 
         setQuiz(generateQuiz(vocabsData));
       } catch (error) {
@@ -125,31 +103,33 @@ const QuizPage: React.FC = () => {
       }
     };
     fetchVocabs();
-  }, []);
+  }, [topicId]);
 
-  /* ================= SPEECH SYNTHESIS LOGIC ================= */
   const speakWord = (text: string) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.rate = 0.9;
-    utterance.pitch = 1;
     window.speechSynthesis.speak(utterance);
   };
 
   useEffect(() => {
     if (!loading && currentQuestion && !gameOver) {
-      const timer = setTimeout(() => {
-        speakWord(currentQuestion.question);
-      }, 600);
+      const timer = setTimeout(() => speakWord(currentQuestion.question), 600);
       return () => clearTimeout(timer);
     }
   }, [currentIndex, loading, gameOver]);
 
-  /* ================= ACTIONS ================= */
+  const handleFinish = async () => {
+    if (!user || !chapterId || !topicId) return;
+    const xpEarned = await completeActivity(user.uid, chapterId, topicId, "quiz", score);
+    await unlockNextActivity(user.uid, chapterId, topicId, "quiz");
+    setEarnedXp(xpEarned);
+    setIsFinished(true);
+  };
+
   const handleCheck = () => {
-    if (!currentQuestion || status !== "idle" || !selectedOption || gameOver)
-      return;
+    if (!currentQuestion || status !== "idle" || !selectedOption || gameOver) return;
 
     if (selectedOption === currentQuestion.correctAnswer) {
       setStatus("correct");
@@ -161,39 +141,31 @@ const QuizPage: React.FC = () => {
           setSelectedOption(null);
           setStatus("idle");
         } else {
-          await updateProgressToScramble();
-          setIsFinished(true);
+          await handleFinish();
         }
       }, 1500);
     } else {
       setStatus("wrong");
-
-      // Mengurangi nyawa ketika jawaban salah
       const newLives = lives - 1;
       setLives(newLives);
 
       setTimeout(() => {
         if (newLives <= 0) {
-          // Game over ketika nyawa habis
           setGameOver(true);
-          setTimeout(() => {
-            navigate("/chapter/about-me");
-          }, 3000);
+          setTimeout(() => navigate(`/chapter/${chapterId}`), 3000);
         } else {
           setStatus("idle");
-          // Pindah ke soal berikutnya meski jawaban salah
           if (currentIndex < quiz.length - 1) {
             setCurrentIndex((prev) => prev + 1);
             setSelectedOption(null);
           } else {
-            navigate("/chapter/about-me");
+            navigate(`/chapter/${chapterId}`);
           }
         }
       }, 1000);
     }
   };
 
-  // Fungsi untuk mereset game
   const resetGame = () => {
     setCurrentIndex(0);
     setSelectedOption(null);
@@ -216,6 +188,7 @@ const QuizPage: React.FC = () => {
       </div>
     );
   }
+
   if (isFinished) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] p-6">
@@ -233,16 +206,19 @@ const QuizPage: React.FC = () => {
               Skor kamu:{" "}
               <span className="text-orange-500 font-bold">{score}</span>
             </p>
+            <div className="mt-4 bg-green-50 text-green-600 font-bold text-xl px-4 py-2 rounded-xl inline-block">
+              +{earnedXp || XP_REWARDS.quiz} XP
+            </div>
             <div className="mt-6 py-3 px-4 bg-orange-50 rounded-2xl border border-orange-100">
               <p className="text-sm text-orange-700 font-bold">
-                🔓 Tantangan Baru Terbuka: Scramble Word!
+                Unlock: Scramble Word!
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <button
-              onClick={() => navigate("/scrambled/personal-info")} // 🔥 Navigasi ke Scramble
+              onClick={() => navigate(`/scrambled/${topicId}`)}
               className="w-full py-5 bg-orange-500 text-white font-black rounded-3xl shadow-lg shadow-orange-200 active:scale-95 transition-all flex items-center justify-center gap-3"
             >
               Main Scramble Word
@@ -250,10 +226,10 @@ const QuizPage: React.FC = () => {
             </button>
 
             <button
-              onClick={() => navigate("/chapter/about-me")}
+              onClick={() => navigate(`/chapter/${chapterId}`)}
               className="w-full py-4 text-gray-400 font-bold text-sm"
             >
-              Nanti saja, kembali ke menu
+              Kembali ke menu
             </button>
           </div>
         </motion.div>
@@ -265,11 +241,7 @@ const QuizPage: React.FC = () => {
     <div>
       {gameOver ? (
         <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl flex flex-col items-center justify-center p-8 text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="mb-6"
-          >
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mb-6">
             <XCircle size={80} className="text-red-500 mx-auto" />
           </motion.div>
           <h2 className="text-3xl font-black text-red-600 mb-4">Game Over!</h2>
@@ -280,7 +252,7 @@ const QuizPage: React.FC = () => {
           </p>
           <div className="flex gap-4">
             <button
-              onClick={() => navigate("/chapter/about-me")}
+              onClick={() => navigate(`/chapter/${chapterId}`)}
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-full font-bold hover:bg-gray-300 transition-colors"
             >
               Kembali
@@ -295,7 +267,6 @@ const QuizPage: React.FC = () => {
         </div>
       ) : (
         <div className="w-full max-w-md bg-[#FAF9F6] rounded-[40px] shadow-2xl flex flex-col overflow-hidden border border-white">
-          {/* HEADER dengan Lives */}
           <div className="px-6 pt-8 pb-4 flex justify-between items-center">
             <button
               onClick={() => navigate(-1)}
@@ -303,38 +274,24 @@ const QuizPage: React.FC = () => {
             >
               <Pause size={16} fill="currentColor" />
             </button>
-            <h2 className="font-black text-[#1E293B] text-lg">
-              Vocabulary Quiz
-            </h2>
+            <h2 className="font-black text-[#1E293B] text-lg">Vocabulary Quiz</h2>
             <div className="flex items-center gap-4">
-              {/* Lives Display */}
               <div className="flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
                 {[...Array(3)].map((_, index) => (
                   <Heart
                     key={index}
                     size={16}
-                    className={
-                      index < lives
-                        ? "text-red-500 fill-current"
-                        : "text-gray-300"
-                    }
+                    className={index < lives ? "text-red-500 fill-current" : "text-gray-300"}
                   />
                 ))}
               </div>
-
-              {/* Score Display */}
               <div className="flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
-                <Star
-                  size={16}
-                  className="text-yellow-400"
-                  fill="currentColor"
-                />
+                <Star size={16} className="text-yellow-400" fill="currentColor" />
                 <span className="font-bold text-sm text-gray-700">{score}</span>
               </div>
             </div>
           </div>
 
-          {/* PROGRESS */}
           <div className="px-8 mb-6">
             <p className="text-[10px] text-gray-400 font-bold uppercase mb-2 tracking-widest">
               Question {currentIndex + 1} of {quiz.length}
@@ -342,15 +299,12 @@ const QuizPage: React.FC = () => {
             <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{
-                  width: `${((currentIndex + 1) / quiz.length) * 100}%`,
-                }}
+                animate={{ width: `${((currentIndex + 1) / quiz.length) * 100}%` }}
                 className="bg-yellow-400 h-full rounded-full"
               />
             </div>
           </div>
 
-          {/* IMAGE SECTION */}
           <div className="px-8 mb-4">
             <AnimatePresence mode="wait">
               <motion.div
@@ -374,7 +328,6 @@ const QuizPage: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          {/* QUESTION AREA WITH SPEECH BUTTON */}
           <div className="text-center mb-6 px-4">
             <span className="text-[10px] uppercase font-black text-gray-400 tracking-[0.2em]">
               Apa arti dari kata:
@@ -393,13 +346,10 @@ const QuizPage: React.FC = () => {
             </div>
           </div>
 
-          {/* OPTIONS */}
           <div className="px-8 grid grid-cols-2 gap-4 mb-8">
             {currentQuestion.options.map((option) => {
               const isSelected = selectedOption === option;
-              const isCorrect =
-                status === "correct" &&
-                option === currentQuestion.correctAnswer;
+              const isCorrect = status === "correct" && option === currentQuestion.correctAnswer;
               const isWrong = status === "wrong" && isSelected;
 
               return (
@@ -409,27 +359,11 @@ const QuizPage: React.FC = () => {
                   onClick={() => setSelectedOption(option)}
                   animate={isWrong ? { x: [-5, 5, -5, 5, 0] } : {}}
                   className={`py-5 rounded-2xl font-bold text-md border-b-4 transition-all
-                    ${
-                      isSelected
-                        ? "translate-y-[-2px]"
-                        : "active:translate-y-[2px]"
-                    }
-                    ${
-                      isCorrect
-                        ? "bg-green-500 border-green-700 text-white"
-                        : ""
-                    }
+                    ${isSelected ? "translate-y-[-2px]" : "active:translate-y-[2px]"}
+                    ${isCorrect ? "bg-green-500 border-green-700 text-white" : ""}
                     ${isWrong ? "bg-red-500 border-red-700 text-white" : ""}
-                    ${
-                      !isCorrect && !isWrong && isSelected
-                        ? "bg-white border-yellow-500 text-yellow-600 shadow-md"
-                        : ""
-                    }
-                    ${
-                      !isCorrect && !isWrong && !isSelected
-                        ? "bg-white border-gray-200 text-gray-600"
-                        : ""
-                    }
+                    ${!isCorrect && !isWrong && isSelected ? "bg-white border-yellow-500 text-yellow-600 shadow-md" : ""}
+                    ${!isCorrect && !isWrong && !isSelected ? "bg-white border-gray-200 text-gray-600" : ""}
                   `}
                 >
                   {option}
@@ -438,7 +372,6 @@ const QuizPage: React.FC = () => {
             })}
           </div>
 
-          {/* ACTION BUTTON */}
           <div className="px-8 pb-10 mt-auto">
             <motion.button
               onClick={handleCheck}
@@ -449,23 +382,15 @@ const QuizPage: React.FC = () => {
                   status === "correct"
                     ? "bg-green-500 text-white"
                     : status === "wrong"
-                      ? "bg-red-500 text-white"
-                      : selectedOption
-                        ? "bg-yellow-400 text-gray-800"
-                        : "bg-gray-200 text-gray-400"
+                    ? "bg-red-500 text-white"
+                    : selectedOption
+                    ? "bg-yellow-400 text-gray-800"
+                    : "bg-gray-200 text-gray-400"
                 }
               `}
             >
-              {status === "correct"
-                ? "Hebat!"
-                : status === "wrong"
-                  ? `Salah! Nyawa: ${lives}`
-                  : "Periksa Jawaban"}
-              {status === "wrong" ? (
-                <XCircle size={24} />
-              ) : (
-                <CheckCircle2 size={24} />
-              )}
+              {status === "correct" ? "Hebat!" : status === "wrong" ? `Salah! Nyawa: ${lives}` : "Periksa Jawaban"}
+              {status === "wrong" ? <XCircle size={24} /> : <CheckCircle2 size={24} />}
             </motion.button>
           </div>
         </div>

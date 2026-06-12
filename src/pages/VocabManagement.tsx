@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Cropper from "react-easy-crop";
 import {
   ChevronLeft,
@@ -11,6 +12,7 @@ import {
   X,
   Camera,
   Image as ImageIcon,
+  Upload,
 } from "lucide-react";
 
 import { db } from "../firebase";
@@ -82,6 +84,8 @@ interface Vocabulary {
 }
 
 const VocabManagement = () => {
+  const navigate = useNavigate();
+  const { chapterId, subChapterId } = useParams();
   const CLOUD_NAME = "dycak3ekf";
   const UPLOAD_PRESET = "vocab_upload";
 
@@ -101,6 +105,10 @@ const VocabManagement = () => {
 
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
+  const jsonInputRef = useRef(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+  const [jsonText, setJsonText] = useState("");
 
   const [formData, setFormData] = useState({
     word: "",
@@ -111,7 +119,9 @@ const VocabManagement = () => {
     imageUrl: "",
   });
 
-  const subChapterPath = "chapters/about me/sub_chapters/personal-info";
+  const subChapterPath = chapterId && subChapterId
+    ? `chapters/${chapterId}/sub_chapters/${subChapterId}`
+    : "chapters/about me/sub_chapters/personal-info";
 
   const fetchVocabs = async () => {
     try {
@@ -184,7 +194,7 @@ const VocabManagement = () => {
     try {
       const croppedBlob = await getCroppedImg(tempImage, croppedAreaPixels);
       setImageFile(croppedBlob);
-      setImagePreview(URL.createObjectURL(croppedBlob));
+      setImagePreview(URL.createObjectURL(croppedBlob as Blob));
       setIsCropModalOpen(false);
     } catch (e) {
       console.error(e);
@@ -266,12 +276,106 @@ const VocabManagement = () => {
     }
   };
 
+  const handleJsonImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const jsonData = JSON.parse(text);
+
+      if (!Array.isArray(jsonData)) {
+        alert("Format JSON harus array");
+        return;
+      }
+
+      for (const item of jsonData) {
+        if (!item.word || !item.indonesian) continue;
+
+        const payload = {
+          word: item.word,
+          indonesian: item.indonesian,
+          phonetic: item.phonetic || "",
+          example: item.example || "",
+          exampleTranslate: item.exampleTranslate || "",
+          imageUrl: item.imageUrl || "",
+          createdAt: new Date(),
+        };
+
+        const docRef = await addDoc(collection(db, "vocabularies"), payload);
+        await updateDoc(doc(db, subChapterPath), {
+          vocab_ids: arrayUnion(docRef.id),
+        });
+      }
+
+      fetchVocabs();
+      alert(`Berhasil import ${jsonData.length} kata`);
+    } catch (error) {
+      console.error(error);
+      alert("Gagal import JSON");
+    } finally {
+      setIsImporting(false);
+      if (jsonInputRef.current) jsonInputRef.current.value = "";
+    }
+  };
+
+  const handleImportFromUrl = async () => {
+    setIsJsonModalOpen(true);
+  };
+
+  const handleJsonTextImport = async () => {
+    if (!jsonText.trim()) return;
+
+    setIsImporting(true);
+    try {
+      const jsonData = JSON.parse(jsonText);
+
+      if (!Array.isArray(jsonData)) {
+        alert("Format JSON harus array");
+        return;
+      }
+
+      for (const item of jsonData) {
+        if (!item.word || !item.indonesian) continue;
+
+        const payload = {
+          word: item.word,
+          indonesian: item.indonesian,
+          phonetic: item.phonetic || "",
+          example: item.example || "",
+          exampleTranslate: item.exampleTranslate || "",
+          imageUrl: item.imageUrl || "",
+          createdAt: new Date(),
+        };
+
+        const docRef = await addDoc(collection(db, "vocabularies"), payload);
+        await updateDoc(doc(db, subChapterPath), {
+          vocab_ids: arrayUnion(docRef.id),
+        });
+      }
+
+      fetchVocabs();
+      setIsJsonModalOpen(false);
+      setJsonText("");
+      alert(`Berhasil import ${jsonData.length} kata`);
+    } catch (error) {
+      console.error(error);
+      alert("Format JSON tidak valid");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <div className="bg-[#FAF9F6] min-h-screen pb-12 font-sans text-slate-800 relative">
       {/* HEADER & MAIN BUTTON (Style Tetap) */}
       <header className="px-6 py-4 flex justify-between items-center bg-white shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-4">
-          <button className="p-2 bg-slate-100 rounded-full text-slate-600 active:scale-90 transition-transform">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 bg-slate-100 rounded-full text-slate-600 active:scale-90 transition-transform"
+          >
             <ChevronLeft size={24} strokeWidth={3} />
           </button>
           <div>
@@ -289,28 +393,68 @@ const VocabManagement = () => {
       </header>
 
       <main className="px-6 pt-6">
-        <div className="mb-6">
-          <p className="text-[11px] font-black text-orange-500 uppercase tracking-widest mb-1">
-            Sub-Chapter
-          </p>
-          <h2 className="text-3xl font-black text-slate-800">
-            Personal Information
-          </h2>
+        {/* HEADER SECTION */}
+        <div className="mb-6 flex justify-between items-end">
+          <div>
+            <p className="text-[11px] font-black text-orange-500 uppercase tracking-[0.2em] mb-1">
+              Sub-Chapter
+            </p>
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight">
+              {subChapterId ? subChapterId.replace(/-/g, " ") : "Personal Info"}
+            </h2>
+          </div>
+
+          {/* OVERVIEW STATS MINIMALIS */}
+          <div className="flex gap-2">
+            <div className="bg-white border border-slate-100 px-3 py-1.5 rounded-2xl shadow-sm flex flex-col items-center min-w-[60px]">
+              <span className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">
+                Total
+              </span>
+              <span className="text-sm font-black text-slate-800 leading-none">
+                {vocabs.length}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={() => {
-            closeModal();
-            setIsModalOpen(true);
-          }}
-          className="w-full py-4 bg-[#F79432] hover:bg-[#E67E22] text-white rounded-[28px] font-black text-lg flex items-center justify-center gap-2 shadow-lg mb-8 transition-all active:scale-95"
-        >
-          <div className="bg-white/20 p-1 rounded-full">
-            <Plus size={20} strokeWidth={4} />
-          </div>
-          Tambah Kosa Kata
-        </button>
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-3 mb-8">
+          <button
+            onClick={() => {
+              closeModal();
+              setIsModalOpen(true);
+            }}
+            className="flex-1 py-4 bg-[#F79432] hover:bg-[#E67E22] text-white rounded-[28px] font-black text-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-200 transition-all active:scale-95"
+          >
+            <div className="bg-white/20 p-1 rounded-full">
+              <Plus size={20} strokeWidth={4} />
+            </div>
+            Tambah
+          </button>
+          <button
+            onClick={() => jsonInputRef.current?.click()}
+            disabled={isImporting}
+            className="py-4 px-6 bg-slate-800 hover:bg-slate-700 text-white rounded-[28px] font-black text-lg flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50"
+          >
+            <Upload size={20} strokeWidth={4} />
+          </button>
+          <button
+            onClick={handleImportFromUrl}
+            disabled={isImporting}
+            className="py-4 px-6 bg-blue-500 hover:bg-blue-600 text-white rounded-[28px] font-black text-sm flex items-center justify-center shadow-lg transition-all active:scale-95 disabled:opacity-50"
+          >
+            Paste JSON
+          </button>
+        </div>
+        <input
+          type="file"
+          ref={jsonInputRef}
+          onChange={handleJsonImport}
+          accept=".json"
+          className="hidden"
+        />
 
+        {/* VOCAB LIST SECTION */}
         <div className="flex flex-col gap-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-2">
@@ -323,11 +467,13 @@ const VocabManagement = () => {
                 key={item.id}
                 className="bg-white rounded-[28px] p-5 shadow-sm border border-slate-50 flex items-center justify-between animate-in fade-in duration-500"
               >
+                {/* ... sisa konten item sama seperti sebelumnya ... */}
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center overflow-hidden border border-orange-100">
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
+                        alt={item.word}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -541,6 +687,47 @@ const VocabManagement = () => {
           <p className="text-white/40 text-[10px] font-bold uppercase mt-4 tracking-widest text-center">
             Geser dan cubit gambar untuk menyesuaikan
           </p>
+        </div>
+      )}
+
+      {/* JSON IMPORT MODAL */}
+      {isJsonModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-[32px] p-8 shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-black text-slate-800">
+                Import JSON
+              </h3>
+              <button
+                onClick={() => {
+                  setIsJsonModalOpen(false);
+                  setJsonText("");
+                }}
+                className="p-2 bg-slate-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-sm font-bold text-slate-500 mb-4">
+              Paste JSON array di bawah:
+            </p>
+
+            <textarea
+              value={jsonText}
+              onChange={(e) => setJsonText(e.target.value)}
+              placeholder='[{"word": "hello", "indonesian": "halo"}, ...]'
+              className="w-full h-48 bg-slate-50 border-none rounded-2xl px-4 py-3 outline-none font-mono text-sm focus:ring-2 focus:ring-orange-500 resize-none"
+            />
+
+            <button
+              onClick={handleJsonTextImport}
+              disabled={isImporting || !jsonText.trim()}
+              className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-lg mt-4 shadow-lg disabled:opacity-50 active:scale-95 transition-all"
+            >
+              {isImporting ? "Mengimport..." : "Import"}
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   RotateCcw,
@@ -10,6 +10,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext";
+import { completeActivity, unlockNextActivity } from "../progress";
 import {
   collection,
   getDocs,
@@ -18,9 +20,6 @@ import {
   documentId,
   query,
   where,
-  limit,
-  DocumentData,
-  updateDoc
 } from "firebase/firestore";
 
 // --- INTERFACES ---
@@ -42,8 +41,22 @@ interface GameWordsState {
   id: GameItem[];
 }
 
+const ROUND_SIZE = 5;
+
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+};
+
 const MatchingGame2: React.FC = () => {
+  const { chapterId, topicId } = useParams<{ chapterId: string; topicId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [rounds, setRounds] = useState<GameWordsState[]>([]);
+  const [currentRound, setCurrentRound] = useState(0);
   const [words, setWords] = useState<GameWordsState>({ en: [], id: [] });
   const [selected, setSelected] = useState<GameItem | null>(null);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
@@ -53,30 +66,14 @@ const MatchingGame2: React.FC = () => {
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [title, setTitle] = useState<string>("");
-  const [isUpdating, setIsUpdating] = useState(false); // State baru untuk proses simpan progress
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const updateProgressToQuiz = async () => {
+    if (!user || !chapterId || !topicId) return;
     try {
       setIsUpdating(true);
-      const userId = "2hE606upFBgYTG496dkWhcb1Uy93"; // Sesuaikan dengan Auth UID
-      const progressDocRef = doc(
-        db,
-        "users",
-        userId,
-        "progress",
-        "about-me",
-        "sub_chapters",
-        "personal-info",
-      );
-
-      await updateDoc(progressDocRef, {
-        "activity.matching.completed": true,
-        "activity.quiz.unlocked": true, // Membuka aktivitas selanjutnya (Quiz)
-        lastActivity: "matching",
-        updatedAt: new Date(),
-      });
-
-      console.log("Progress updated: Quiz Unlocked!");
+      await completeActivity(user.uid, chapterId, topicId, "matching", 100);
+      await unlockNextActivity(user.uid, chapterId, topicId, "matching");
     } catch (error) {
       console.error("Error updating progress:", error);
     } finally {
@@ -84,26 +81,23 @@ const MatchingGame2: React.FC = () => {
     }
   };
 
-  // 1. FETCH DATA - LIMIT KE 5 KATA SAJA
+  // 1. FETCH DATA - ALL VOCAB, SPLIT INTO ROUNDS OF 5
   useEffect(() => {
     const fetchWords = async () => {
+      if (!chapterId || !topicId) return;
       try {
         setLoading(true);
         const subDoc = await getDoc(
-          doc(db, `chapters/about me/sub_chapters/personal-info`),
+          doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`),
         );
         if (!subDoc.exists()) throw new Error("Sub-chapter tidak ditemukan");
 
         const ids = subDoc.data().vocab_ids;
         setTitle(subDoc.data().title);
 
-        // Batasi hanya 5 kata pertama dari vocab_ids
-        const limitedIds = ids.slice(0, 5);
-
         const vocabQuery = query(
           collection(db, "vocabularies"),
-          where(documentId(), "in", limitedIds),
-          limit(5), // Limit query ke 5 dokumen
+          where(documentId(), "in", ids),
         );
         const snapshot = await getDocs(vocabQuery);
 
@@ -117,25 +111,19 @@ const MatchingGame2: React.FC = () => {
           });
         });
 
-        // Jika data kurang dari 5, tambahkan fallback words
-        if (dataToProcess.length < 5) {
-          const fallbackWords = getFallbackWords();
-          // Ambil sejumlah kata yang dibutuhkan dari fallback
-          const needed = 5 - dataToProcess.length;
-          const additionalWords = fallbackWords.slice(0, needed);
-          dataToProcess.push(...additionalWords);
+        // Chunk into rounds of ROUND_SIZE
+        const chunks = chunkArray(dataToProcess, ROUND_SIZE);
+        const gameRounds = chunks.map(chunk => createWordPairs(chunk));
+        setRounds(gameRounds);
+        if (gameRounds.length > 0) {
+          setWords(gameRounds[0]);
         }
-
-        // Pastikan hanya 5 kata
-        const limitedData = dataToProcess.slice(0, 5);
-
-        const gameData = createWordPairs(limitedData);
-        setWords(gameData);
       } catch (err) {
         console.error("Error fetching words:", err);
-        // Gunakan fallback words jika error, tetap 5 kata
-        const fallbackWords = getFallbackWords().slice(0, 5);
-        setWords(createWordPairs(fallbackWords));
+        const fallbackWords = getFallbackWords().slice(0, ROUND_SIZE);
+        const fbRound = createWordPairs(fallbackWords);
+        setRounds([fbRound]);
+        setWords(fbRound);
       } finally {
         setLoading(false);
       }
@@ -143,14 +131,26 @@ const MatchingGame2: React.FC = () => {
     fetchWords();
   }, []);
 
-  // --- TRIGGER SUCCESS DENGAN UPDATE DB ---
+  // --- HANDLE ROUND COMPLETION / GAME COMPLETION ---
   useEffect(() => {
     const total = words.en.length + words.id.length;
-    if (total > 0 && solvedIds.length === total) {
-      // Jalankan update database sebelum menampilkan modal sukses
+    if (total === 0 || solvedIds.length !== total) return;
+
+    const isLastRound = currentRound >= rounds.length - 1;
+
+    if (isLastRound) {
       updateProgressToQuiz().then(() => {
         setTimeout(() => setShowSuccess(true), 500);
       });
+    } else {
+      // Move to next round after a brief delay
+      const timer = setTimeout(() => {
+        setCurrentRound(prev => prev + 1);
+        setWords(rounds[currentRound + 1]);
+        setSolvedIds([]);
+        setSelected(null);
+      }, 800);
+      return () => clearTimeout(timer);
     }
   }, [solvedIds, words]);
   // 2. HELPERS
@@ -168,13 +168,10 @@ const MatchingGame2: React.FC = () => {
   ];
 
   const createWordPairs = (wordList: RawVocabulary[]): GameWordsState => {
-    // Pastikan hanya maksimal 5 kata
-    const limitedList = wordList.slice(0, 5);
-
     const enSide: GameItem[] = [];
     const idSide: GameItem[] = [];
 
-    limitedList.forEach((word) => {
+    wordList.forEach((word) => {
       const matchKey = word.word.toLowerCase();
       enSide.push({
         id: `${word.id}_en`,
@@ -236,13 +233,6 @@ const MatchingGame2: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const total = words.en.length + words.id.length;
-    if (total > 0 && solvedIds.length === total) {
-      setTimeout(() => setShowSuccess(true), 500);
-    }
-  }, [solvedIds, words]);
-
   if (loading)
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#F9F9F9]">
@@ -261,7 +251,7 @@ const MatchingGame2: React.FC = () => {
       <div className="max-w-2xl mx-auto">
         <header className="flex justify-between items-center mb-8 pt-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/chapter/${chapterId}`)}
             className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition-transform"
           >
             <XCircle size={20} className="text-gray-500" />
@@ -283,7 +273,7 @@ const MatchingGame2: React.FC = () => {
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Cocokkan {words.en.length} pasang kata
+              Round {currentRound + 1}/{rounds.length} &bull; {words.en.length} pasang kata
             </p>
           </div>
 
@@ -348,7 +338,7 @@ const MatchingGame2: React.FC = () => {
       </div>
 
       {/* --- MODAL SUCCESS --- */}
-     <AnimatePresence>
+      <AnimatePresence>
         {showSuccess && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -358,15 +348,15 @@ const MatchingGame2: React.FC = () => {
             <div className="text-center max-w-sm">
               <div className="relative inline-block mb-4">
                 <Trophy size={80} className="mx-auto text-yellow-500" />
-                <motion.div 
-                  initial={{ scale: 0 }} 
-                  animate={{ scale: 1 }} 
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
                   className="absolute -top-2 -right-2 bg-green-500 text-white p-2 rounded-full border-4 border-white"
                 >
                   <CheckCircle2 size={20} />
                 </motion.div>
               </div>
-              
+
               <h2 className="text-3xl font-black text-gray-800 mb-2">
                 Mantap!
               </h2>
@@ -376,13 +366,13 @@ const MatchingGame2: React.FC = () => {
 
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => navigate("/chapter/about-me")}
+                  onClick={() => navigate(`/chapter/${chapterId}`)}
                   className="w-full py-4 bg-gray-800 text-white font-black rounded-[24px] shadow-xl active:scale-95 transition-all"
                 >
                   Kembali ke Menu
                 </button>
                 <button
-                  onClick={() => navigate("/quiz/personal-info")}
+                  onClick={() => navigate(`/quiz/${chapterId}/${topicId}`)}
                   className="w-full py-4 bg-white text-gray-400 font-bold text-sm rounded-[24px] border border-gray-100 active:scale-95 transition-all"
                 >
                   Lanjut ke Quiz Sekarang
@@ -419,7 +409,7 @@ const MatchingGame2: React.FC = () => {
                   <RotateCcw size={20} /> Coba Lagi
                 </button>
                 <button
-                  onClick={() => navigate("/chapter/aboutme")}
+                  onClick={() => navigate(`/chapter/${chapterId}`)}
                   className="px-10 py-4 bg-red-700 text-white font-black rounded-full shadow-xl hover:bg-red-800 transition-colors"
                 >
                   Keluar
@@ -453,14 +443,13 @@ const WordCard: React.FC<WordCardProps> = ({
     onClick={() => onSelect(item)}
     animate={isWrong ? { x: [-3, 3, -3, 3, 0] } : {}}
     className={`w-full h-20 rounded-[28px] border-2 font-black text-[15px] transition-all duration-300 shadow-sm
-      ${
-        isSolved
-          ? "bg-green-50 border-green-100 text-green-500 opacity-40 shadow-none pointer-events-none"
-          : isWrong
+      ${isSolved
+        ? "bg-green-50 border-green-100 text-green-500 opacity-40 shadow-none pointer-events-none"
+        : isWrong
           ? "bg-red-50 border-red-200 text-red-500 shadow-red-100"
           : isSelected
-          ? "bg-blue-500 border-blue-600 text-white scale-[1.03] shadow-lg shadow-blue-100"
-          : "bg-white border-gray-100 text-gray-700 hover:border-blue-100"
+            ? "bg-blue-500 border-blue-600 text-white scale-[1.03] shadow-lg shadow-blue-100"
+            : "bg-white border-gray-100 text-gray-700 hover:border-blue-100"
       }`}
   >
     {isSolved ? <CheckCircle2 size={24} className="mx-auto" /> : item.text}

@@ -42,6 +42,7 @@ const SubChapterManagement = () => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
+          vocabCount: doc.data().vocab_ids?.length || 0,
         }));
 
         setSubChapters(data);

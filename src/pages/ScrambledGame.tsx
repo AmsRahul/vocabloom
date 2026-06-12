@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Lightbulb, Volume2, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   collection,
   getDocs,
@@ -11,11 +11,11 @@ import {
   query,
   where,
   limit,
-  updateDoc
 } from "firebase/firestore";
 import { db } from "@/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { completeActivity, unlockNextActivity, XP_REWARDS, checkActivityAccess } from "@/progress";
 
-// ================= TYPES =================
 interface Vocab {
   word: string;
   indonesian: string;
@@ -27,25 +27,33 @@ interface LetterOption {
   char: string;
 }
 
-// ================= HELPERS =================
-const shuffle = <T,>(array: T[]): T[] =>
-  [...array].sort(() => Math.random() - 0.5);
+const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
 
-// ================= COMPONENT =================
 const ScrambledWordGame: React.FC = () => {
+  const { chapterId, topicId } = useParams<{ chapterId: string; topicId: string }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
   const [allVocabs, setAllVocabs] = useState<Vocab[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [shuffledOptions, setShuffledOptions] = useState<LetterOption[]>([]);
   const [answers, setAnswers] = useState<(LetterOption | null)[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<"idle" | "correct" | "wrong">("idle");
-  const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [earnedXp, setEarnedXp] = useState(0);
 
   const currentVocab = allVocabs[currentIndex];
 
-  // ===== SPEECH SYNTHESIS =====
+  useEffect(() => {
+    if (!user || !chapterId || !topicId) return;
+    checkActivityAccess(user.uid, chapterId, topicId, "scrambled").then((hasAccess) => {
+      if (!hasAccess) {
+        navigate(`/quiz/${chapterId}/${topicId}`);
+      }
+    });
+  }, [user, chapterId, topicId, navigate]);
+
   const speakWord = useCallback((text: string) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -54,23 +62,20 @@ const ScrambledWordGame: React.FC = () => {
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  // ===== FETCH DATA =====
   useEffect(() => {
     const fetchVocabs = async () => {
+      if (!chapterId || !topicId) return;
       try {
-        const subDoc = await getDoc(
-          doc(db, `chapters/about me/sub_chapters/personal-info`)
-        );
+        const subDoc = await getDoc(doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`));
         const ids = subDoc.data()?.vocab_ids || [];
 
         const vocabQuery = query(
           collection(db, "vocabularies"),
-          where(documentId(), "in", ids),
-          limit(10)
+          where(documentId(), "in", ids)
         );
 
         const snapshot = await getDocs(vocabQuery);
-        const vocabsData = snapshot.docs.map((doc) => doc.data() as Vocab);
+        const vocabsData = snapshot.docs.map((d) => d.data() as Vocab);
 
         setAllVocabs(vocabsData);
         if (vocabsData.length > 0) {
@@ -83,9 +88,8 @@ const ScrambledWordGame: React.FC = () => {
       }
     };
     fetchVocabs();
-  }, []);
+  }, [topicId]);
 
-  // ===== SETUP GAME PER WORD =====
   const setupGame = (vocab: Vocab) => {
     const letters = vocab.word.toUpperCase().split("");
     setAnswers(new Array(letters.length).fill(null));
@@ -99,36 +103,15 @@ const ScrambledWordGame: React.FC = () => {
     );
     setStatus("idle");
   };
-  const updateProgressToSayIt = async () => {
-    try {
-      setIsUpdating(true);
-      const userId = "2hE606upFBgYTG496dkWhcb1Uy93"; // Sesuaikan UID
-      const progressDocRef = doc(
-        db,
-        "users",
-        userId,
-        "progress",
-        "about-me",
-        "sub_chapters",
-        "personal-info",
-      );
 
-      await updateDoc(progressDocRef, {
-        "activity.scrambled.completed": true,
-        "activity.sayit.unlocked": true, // 🔥 Membuka tantangan Speaking
-        lastActivity: "scrambled",
-        updatedAt: new Date(),
-      });
-
-      console.log("Progress updated: Say It Unlocked!");
-    } catch (error) {
-      console.error("Error updating progress:", error);
-    } finally {
-      setIsUpdating(false);
-    }
+  const handleFinish = async () => {
+    if (!user || !chapterId || !topicId) return;
+    const xpEarned = await completeActivity(user.uid, chapterId, topicId, "scrambled", 100);
+    await unlockNextActivity(user.uid, chapterId, topicId, "scrambled");
+    setEarnedXp(xpEarned);
+    setShowSuccess(true);
   };
 
-  // ===== HANDLERS =====
   const handleSelectLetter = (option: LetterOption) => {
     if (status === "correct") return;
     const emptyIndex = answers.indexOf(null);
@@ -159,14 +142,13 @@ const ScrambledWordGame: React.FC = () => {
     if (isCorrect) {
       setStatus("correct");
       speakWord(currentVocab.word);
-      setTimeout( async () => {
+      setTimeout(async () => {
         if (currentIndex < allVocabs.length - 1) {
           const nextIdx = currentIndex + 1;
           setCurrentIndex(nextIdx);
           setupGame(allVocabs[nextIdx]);
         } else {
-          await updateProgressToSayIt();
-          setShowSuccess(true);
+          await handleFinish();
         }
       }, 2000);
     } else {
@@ -176,7 +158,7 @@ const ScrambledWordGame: React.FC = () => {
     }
   };
 
-  if (loading || isUpdating)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FDFDFB]">
         <motion.div
@@ -187,11 +169,11 @@ const ScrambledWordGame: React.FC = () => {
         </motion.div>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFB] flex justify-center p-4 font-sans antialiased">
       <div className="w-full max-w-md flex flex-col items-center">
-        {/* HEADER */}
         <div className="w-full flex items-center justify-between mt-2 mb-4">
           <button
             onClick={() => navigate(-1)}
@@ -210,7 +192,6 @@ const ScrambledWordGame: React.FC = () => {
           </button>
         </div>
 
-        {/* MODAL SUCCESS PINDAH KE SAY IT */}
         <AnimatePresence>
           {showSuccess && (
             <motion.div
@@ -229,21 +210,23 @@ const ScrambledWordGame: React.FC = () => {
               <h2 className="text-4xl font-black text-gray-800 mb-2">
                 Luar Biasa!
               </h2>
-              <p className="text-gray-500 mb-8 font-medium">
-                Kamu sudah jago menyusun kata. Sekarang, mari coba ucapkan
-                kata-kata tersebut!
+              <p className="text-gray-500 mb-4 font-medium">
+                Kamu sudah jago menyusun kata!
               </p>
+              <div className="bg-green-50 text-green-600 font-bold text-xl px-4 py-2 rounded-xl inline-block mb-8">
+                +{earnedXp || XP_REWARDS.scrambled} XP
+              </div>
 
               <div className="w-full space-y-3">
                 <button
-                  onClick={() => navigate("/say-it/personal-info")}
+                  onClick={() => navigate(`/say-it/${chapterId}/${topicId}`)}
                   className="w-full py-5 bg-orange-500 text-white font-black rounded-[28px] shadow-xl shadow-orange-100 flex items-center justify-center gap-3 active:scale-95 transition-all"
                 >
                   Lanjut ke Say It!
                   <CheckCircle size={24} />
                 </button>
                 <button
-                  onClick={() => navigate("/chapter/about-me")}
+                  onClick={() => navigate(`/chapter/${chapterId}`)}
                   className="w-full py-4 text-gray-400 font-bold"
                 >
                   Kembali ke Menu
@@ -253,19 +236,18 @@ const ScrambledWordGame: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* CARD */}
         <motion.div
           key={currentIndex}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className={`w-full bg-white rounded-[40px] p-6 shadow-xl border-2 mb-8 relative transition-colors
-          ${
-            status === "correct"
-              ? "border-green-400"
-              : status === "wrong"
+            ${
+              status === "correct"
+                ? "border-green-400"
+                : status === "wrong"
                 ? "border-red-400"
                 : "border-transparent"
-          }`}
+            }`}
         >
           <div className="w-full aspect-square bg-gray-50 rounded-[32px] flex items-center justify-center p-4 mb-2">
             <img
@@ -280,15 +262,8 @@ const ScrambledWordGame: React.FC = () => {
           <p className="text-center text-yellow-500 font-black text-2xl uppercase">
             {currentVocab.indonesian}
           </p>
-          {/* <button
-            onClick={() => speakWord(currentVocab.word)}
-            className="absolute bottom-6 right-6 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-yellow-500 active:scale-90 transition-transform"
-          >
-            <Volume2 size={24} fill="currentColor" fillOpacity={0.1} />
-          </button> */}
         </motion.div>
 
-        {/* ANSWER SLOTS */}
         <div className="flex flex-wrap justify-center gap-2 mb-10 min-h-[60px]">
           {answers.map((letter, idx) => (
             <motion.button
@@ -299,8 +274,8 @@ const ScrambledWordGame: React.FC = () => {
                   status === "correct"
                     ? "border-green-500 text-green-600 bg-green-50 rounded-t-xl"
                     : letter
-                      ? "border-yellow-400 text-yellow-500 bg-yellow-50 rounded-t-xl"
-                      : "border-gray-200 text-transparent"
+                    ? "border-yellow-400 text-yellow-500 bg-yellow-50 rounded-t-xl"
+                    : "border-gray-200 text-transparent"
                 }`}
             >
               {letter?.char}
@@ -308,7 +283,6 @@ const ScrambledWordGame: React.FC = () => {
           ))}
         </div>
 
-        {/* OPTIONS (DENGAN ANIMASI SMOOTH) */}
         <div className="w-full mb-8">
           <p className="text-center text-gray-400 font-bold text-[11px] uppercase tracking-widest mb-4">
             Tap the letters to spell the word
@@ -333,7 +307,6 @@ const ScrambledWordGame: React.FC = () => {
           </div>
         </div>
 
-        {/* CHECK BUTTON */}
         <div className="w-full pb-4">
           <motion.button
             whileTap={{ scale: 0.98 }}
@@ -344,8 +317,8 @@ const ScrambledWordGame: React.FC = () => {
                 status === "correct"
                   ? "bg-green-500 text-white"
                   : answers.every(Boolean)
-                    ? "bg-yellow-400 text-gray-800 shadow-lg"
-                    : "bg-gray-200 text-gray-400"
+                  ? "bg-yellow-400 text-gray-800 shadow-lg"
+                  : "bg-gray-200 text-gray-400"
               }`}
           >
             {status === "correct" ? "Hebat!" : "Check Word"}
