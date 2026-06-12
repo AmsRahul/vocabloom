@@ -27,6 +27,7 @@ import SubChapterManagement from "./pages/SubChapterManagement";
 import VocabManagement from "./pages/VocabManagement";
 import AddChapterPage from "./pages/AddChapterPage";
 import AddSubChapterPage from "./pages/AddSubChapterPage";
+import StudentProgressDashboard from "./pages/StudentProgressDashboard";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -44,6 +45,7 @@ const App = () => (
             {/* TEACHER ROUTES */}
             {/* ================= TEACHER ROUTES ================= */}
             <Route path="/teacher/chapter" element={<ChapterManagement />} />
+            <Route path="/teacher/students" element={<StudentProgressDashboard />} />
 
             {/* Add Chapter */}
             <Route path="/teacher/chapter/add" element={<AddChapterPage />} />

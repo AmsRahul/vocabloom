@@ -171,10 +171,10 @@ const ChapterManagement = () => {
           </div>
           <span className="text-[10px] font-bold">Chapters</span>
         </button>
-        <button className="flex flex-col items-center gap-1 text-slate-300">
+        <Link to="/teacher/students" className="flex flex-col items-center gap-1 text-slate-300 hover:text-slate-500 transition-colors">
           <Users size={24} />
           <span className="text-[10px] font-bold">Students</span>
-        </button>
+        </Link>
         <button className="flex flex-col items-center gap-1 text-slate-300">
           <BarChart3 size={24} />
           <span className="text-[10px] font-bold">Analytics</span>
