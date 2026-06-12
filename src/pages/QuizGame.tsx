@@ -36,6 +36,9 @@ interface QuizQuestion {
   image?: string;
 }
 
+const rightSound = new Audio("/assets/sounds/right.mp3");
+const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+
 const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
 
 const generateQuiz = (vocabs: Vocab[]): QuizQuestion[] =>
@@ -132,6 +135,8 @@ const QuizPage: React.FC = () => {
     if (!currentQuestion || status !== "idle" || !selectedOption || gameOver) return;
 
     if (selectedOption === currentQuestion.correctAnswer) {
+      rightSound.currentTime = 0;
+      rightSound.play().catch(() => {});
       setStatus("correct");
       setScore((prev) => prev + 10);
 
@@ -145,6 +150,8 @@ const QuizPage: React.FC = () => {
         }
       }, 1500);
     } else {
+      wrongSound.currentTime = 0;
+      wrongSound.play().catch(() => {});
       setStatus("wrong");
       const newLives = lives - 1;
       setLives(newLives);

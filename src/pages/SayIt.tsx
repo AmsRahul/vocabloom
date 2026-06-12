@@ -17,6 +17,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { completeActivity, checkAndUnlockNextSubChapter, XP_REWARDS, checkActivityAccess } from "@/progress";
 
+const rightSound = new Audio("/assets/sounds/right.mp3");
+const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+
 interface SpeechRecognitionInstance extends EventTarget {
   lang: string;
   interimResults: boolean;
@@ -153,8 +156,13 @@ const SayIt: React.FC = () => {
       setTranscript(spoken);
 
       if (spoken.includes(vocab.word.toLowerCase())) {
+        rightSound.currentTime = 0;
+        rightSound.play().catch(() => {});
         setIsCorrect(true);
         speakWord(vocab.word);
+      } else {
+        wrongSound.currentTime = 0;
+        wrongSound.play().catch(() => {});
       }
     };
 

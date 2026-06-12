@@ -27,6 +27,9 @@ interface LetterOption {
   char: string;
 }
 
+const rightSound = new Audio("/assets/sounds/right.mp3");
+const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+
 const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
 
 const ScrambledWordGame: React.FC = () => {
@@ -151,7 +154,15 @@ const ScrambledWordGame: React.FC = () => {
 
     if (isCorrect) {
       setStatus("correct");
-      speakWord(currentVocab.word);
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(currentVocab.word);
+      utterance.lang = "en-US";
+      utterance.rate = 0.9;
+      utterance.onend = () => {
+        rightSound.currentTime = 0;
+        rightSound.play().catch(() => {});
+      };
+      window.speechSynthesis.speak(utterance);
       setTimeout(async () => {
         if (currentIndex < allVocabs.length - 1) {
           const nextIdx = currentIndex + 1;
@@ -162,6 +173,8 @@ const ScrambledWordGame: React.FC = () => {
         }
       }, 2000);
     } else {
+      wrongSound.currentTime = 0;
+      wrongSound.play().catch(() => {});
       setStatus("wrong");
       if (navigator.vibrate) navigator.vibrate(200);
       setTimeout(() => setStatus("idle"), 1000);
