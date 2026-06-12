@@ -112,10 +112,20 @@ const ScrambledWordGame: React.FC = () => {
     setShowSuccess(true);
   };
 
+  const speakLetter = useCallback((char: string) => {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(char);
+    utterance.lang = "en-US";
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
   const handleSelectLetter = (option: LetterOption) => {
     if (status === "correct") return;
     const emptyIndex = answers.indexOf(null);
     if (emptyIndex === -1) return;
+
+    speakLetter(option.char);
 
     const newAnswers = [...answers];
     newAnswers[emptyIndex] = option;

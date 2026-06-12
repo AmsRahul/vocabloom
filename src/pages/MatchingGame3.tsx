@@ -43,6 +43,9 @@ interface GameWordsState {
 
 const ROUND_SIZE = 5;
 
+const rightSound = new Audio("/assets/sounds/right.mp3");
+const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   const chunks: T[][] = [];
   for (let i = 0; i < arr.length; i += size) {
@@ -212,10 +215,14 @@ const MatchingGame2: React.FC = () => {
     } else {
       // Cek apakah match
       if (selected.matchId === item.matchId && selected.lang !== item.lang) {
+        rightSound.currentTime = 0;
+        rightSound.play().catch(() => {});
         setSolvedIds((prev) => [...prev, selected.id, item.id]);
         setSelected(null);
       } else {
         // SALAH JAWABAN
+        wrongSound.currentTime = 0;
+        wrongSound.play().catch(() => {});
         setWrongId(item.id);
         setLives((prev) => {
           const newLives = prev - 1;
