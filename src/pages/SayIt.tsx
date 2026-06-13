@@ -16,9 +16,11 @@ import { db } from "@/firebase";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { completeActivity, checkAndUnlockNextSubChapter, XP_REWARDS, checkActivityAccess } from "@/progress";
+import { balloons } from "balloons-js";
 
 const rightSound = new Audio("/assets/sounds/right.mp3");
 const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+const subchapterFinishSound = new Audio("/assets/sounds/subchapter-finish.mp3");
 
 interface SpeechRecognitionInstance extends EventTarget {
   lang: string;
@@ -45,6 +47,7 @@ declare global {
   interface Window {
     SpeechRecognition: { new (): SpeechRecognitionInstance };
     webkitSpeechRecognition: { new (): SpeechRecognitionInstance };
+    confetti: (options?: Record<string, unknown>) => void;
   }
 }
 
@@ -181,6 +184,15 @@ const SayIt: React.FC = () => {
     setEarnedXp(xpEarned);
     setShowSuccess(true);
   };
+
+  useEffect(() => {
+    if (showSuccess) {
+      subchapterFinishSound.currentTime = 0;
+      subchapterFinishSound.play().catch(() => {});
+      window.confetti?.();
+      balloons();
+    }
+  }, [showSuccess]);
 
   const startRecording = () => {
     if (isCorrect) return;

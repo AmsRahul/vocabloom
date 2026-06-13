@@ -38,16 +38,34 @@ interface QuizQuestion {
 
 const rightSound = new Audio("/assets/sounds/right.mp3");
 const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+const gameDoneSound = new Audio("/assets/sounds/game-done.mp3");
+
+declare global {
+  interface Window {
+    confetti: (options?: Record<string, unknown>) => void;
+  }
+}
 
 const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
 
+const FALLBACK_WRONG = ["Tidak", "Iya", "Mungkin", "Sama", "Baru", "Lama", "Besar", "Kecil"];
+
 const generateQuiz = (vocabs: Vocab[]): QuizQuestion[] =>
   vocabs.map((vocab) => {
-    const wrongOptions = shuffle(
-      vocabs
-        .filter((v) => v.indonesian !== vocab.indonesian)
-        .map((v) => v.indonesian)
-    ).slice(0, 3);
+    const wrongPool = Array.from(
+      new Set(
+        vocabs
+          .filter((v) => v.indonesian !== vocab.indonesian)
+          .map((v) => v.indonesian)
+      )
+    );
+
+    while (wrongPool.length < 3) {
+      const pad = FALLBACK_WRONG.filter((w) => !wrongPool.includes(w) && w !== vocab.indonesian);
+      wrongPool.push(...pad);
+    }
+
+    const wrongOptions = shuffle(wrongPool).slice(0, 3);
 
     return {
       question: vocab.word,
@@ -130,6 +148,14 @@ const QuizPage: React.FC = () => {
     setEarnedXp(xpEarned);
     setIsFinished(true);
   };
+
+  useEffect(() => {
+    if (isFinished) {
+      gameDoneSound.currentTime = 0;
+      gameDoneSound.play().catch(() => {});
+      window.confetti?.();
+    }
+  }, [isFinished]);
 
   const handleCheck = () => {
     if (!currentQuestion || status !== "idle" || !selectedOption || gameOver) return;
@@ -225,7 +251,7 @@ const QuizPage: React.FC = () => {
 
           <div className="space-y-4">
             <button
-              onClick={() => navigate(`/scrambled/${topicId}`)}
+              onClick={() => navigate(`/scrambled/${chapterId}/${topicId}`)}
               className="w-full py-5 bg-orange-500 text-white font-black rounded-3xl shadow-lg shadow-orange-200 active:scale-95 transition-all flex items-center justify-center gap-3"
             >
               Main Scramble Word
@@ -354,14 +380,14 @@ const QuizPage: React.FC = () => {
           </div>
 
           <div className="px-8 grid grid-cols-2 gap-4 mb-8">
-            {currentQuestion.options.map((option) => {
+            {currentQuestion.options.map((option, oi) => {
               const isSelected = selectedOption === option;
               const isCorrect = status === "correct" && option === currentQuestion.correctAnswer;
               const isWrong = status === "wrong" && isSelected;
 
               return (
                 <motion.button
-                  key={option}
+                  key={oi}
                   disabled={status !== "idle"}
                   onClick={() => setSelectedOption(option)}
                   animate={isWrong ? { x: [-5, 5, -5, 5, 0] } : {}}

@@ -29,6 +29,13 @@ interface LetterOption {
 
 const rightSound = new Audio("/assets/sounds/right.mp3");
 const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+const gameDoneSound = new Audio("/assets/sounds/game-done.mp3");
+
+declare global {
+  interface Window {
+    confetti: (options?: Record<string, unknown>) => void;
+  }
+}
 
 const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
 
@@ -114,6 +121,14 @@ const ScrambledWordGame: React.FC = () => {
     setEarnedXp(xpEarned);
     setShowSuccess(true);
   };
+
+  useEffect(() => {
+    if (showSuccess) {
+      gameDoneSound.currentTime = 0;
+      gameDoneSound.play().catch(() => {});
+      window.confetti?.();
+    }
+  }, [showSuccess]);
 
   const speakLetter = useCallback((char: string) => {
     window.speechSynthesis.cancel();
