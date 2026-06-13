@@ -41,10 +41,17 @@ interface GameWordsState {
   id: GameItem[];
 }
 
+declare global {
+  interface Window {
+    confetti: (options?: Record<string, unknown>) => void;
+  }
+}
+
 const ROUND_SIZE = 5;
 
 const rightSound = new Audio("/assets/sounds/right.mp3");
 const wrongSound = new Audio("/assets/sounds/wrong.mp3");
+const gameDoneSound = new Audio("/assets/sounds/game-done.mp3");
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   const chunks: T[][] = [];
@@ -134,7 +141,7 @@ const MatchingGame2: React.FC = () => {
     fetchWords();
   }, []);
 
-  // --- HANDLE ROUND COMPLETION / GAME COMPLETION ---
+// --- HANDLE ROUND COMPLETION / GAME COMPLETION ---
   useEffect(() => {
     const total = words.en.length + words.id.length;
     if (total === 0 || solvedIds.length !== total) return;
@@ -156,6 +163,16 @@ const MatchingGame2: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [solvedIds, words]);
+
+  // Play game-done sound when success modal appears
+  useEffect(() => {
+    if (showSuccess) {
+      gameDoneSound.currentTime = 0;
+      gameDoneSound.play().catch(() => {});
+      window.confetti?.();
+    }
+  }, [showSuccess]);
+
   // 2. HELPERS
   const getFallbackWords = (): RawVocabulary[] => [
     { id: "1", word: "Hello", indonesian: "Halo" },
@@ -373,16 +390,16 @@ const MatchingGame2: React.FC = () => {
 
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => navigate(`/chapter/${chapterId}`)}
+                  onClick={() => navigate(`/quiz/${chapterId}/${topicId}`)}
                   className="w-full py-4 bg-gray-800 text-white font-black rounded-[24px] shadow-xl active:scale-95 transition-all"
                 >
-                  Kembali ke Menu
+                  Lanjut ke Quiz Sekarang
                 </button>
                 <button
-                  onClick={() => navigate(`/quiz/${chapterId}/${topicId}`)}
+                  onClick={() => navigate(`/chapter/${chapterId}`)}
                   className="w-full py-4 bg-white text-gray-400 font-bold text-sm rounded-[24px] border border-gray-100 active:scale-95 transition-all"
                 >
-                  Lanjut ke Quiz Sekarang
+                  Kembali ke Menu
                 </button>
               </div>
             </div>
