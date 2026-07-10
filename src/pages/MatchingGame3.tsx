@@ -5,24 +5,15 @@ import {
   RotateCcw,
   Loader2,
   Trophy,
-  Heart, // Ikon untuk nyawa
+  Heart,
   XCircle,
   CheckCircle2,
 } from "lucide-react";
-import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
 import { completeActivity, unlockNextActivity } from "../progress";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  documentId,
-  query,
-  where,
-} from "firebase/firestore";
+import { fetchSubChapterVocabs } from "../dataService";
+import HelpModal from "../components/HelpModal";
 
-// --- INTERFACES ---
 interface RawVocabulary {
   id: string;
   word: string;
@@ -91,37 +82,20 @@ const MatchingGame2: React.FC = () => {
     }
   };
 
-  // 1. FETCH DATA - ALL VOCAB, SPLIT INTO ROUNDS OF 5
   useEffect(() => {
     const fetchWords = async () => {
       if (!chapterId || !topicId) return;
       try {
         setLoading(true);
-        const subDoc = await getDoc(
-          doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`),
-        );
-        if (!subDoc.exists()) throw new Error("Sub-chapter tidak ditemukan");
-
-        const ids = subDoc.data().vocab_ids;
-        setTitle(subDoc.data().title);
-
-        const vocabQuery = query(
-          collection(db, "vocabularies"),
-          where(documentId(), "in", ids),
-        );
-        const snapshot = await getDocs(vocabQuery);
-
-        const dataToProcess: RawVocabulary[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          dataToProcess.push({
-            id: doc.id,
-            word: data.word,
-            indonesian: data.indonesian,
-          });
-        });
-
-        // Chunk into rounds of ROUND_SIZE
+        const vocabs = await fetchSubChapterVocabs(chapterId, topicId);
+        if (vocabs.length > 0) {
+          setTitle(topicId);
+        }
+        const dataToProcess: RawVocabulary[] = vocabs.map((v) => ({
+          id: v.id,
+          word: v.word,
+          indonesian: v.indonesian,
+        }));
         const chunks = chunkArray(dataToProcess, ROUND_SIZE);
         const gameRounds = chunks.map(chunk => createWordPairs(chunk));
         setRounds(gameRounds);
@@ -274,12 +248,23 @@ const MatchingGame2: React.FC = () => {
       )}
       <div className="max-w-2xl mx-auto">
         <header className="flex justify-between items-center mb-8 pt-4">
-          <button
-            onClick={() => navigate(`/chapter/${chapterId}`)}
-            className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition-transform"
-          >
-            <XCircle size={20} className="text-gray-500" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(`/chapter/${chapterId}`)}
+              className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition-transform"
+            >
+              <XCircle size={20} className="text-gray-500" />
+            </button>
+            <HelpModal
+              activityName="Matching Game"
+              steps={[
+                { icon: "1", title: "Pilih Kata Inggris", description: "Ketik salah satu kata di kolom English untuk memulai." },
+                { icon: "2", title: "Cocokkan", description: "Ketik kata Indonesia yang sesuai. Jika benar, kartu akan berwarna hijau." },
+                { icon: "3", title: "Hati-hati!", description: "Jawaban salah akan mengurangi nyawa. Kamu punya 3 nyawa. Jika habis, permainan berakhir." },
+                { icon: "4", title: "Selesai", description: "Selesaikan semua round untuk menyelesaikan tantangan ini." },
+              ]}
+            />
+          </div>
 
           <div className="flex flex-col items-center">
             <h1 className="text-lg font-black text-gray-800 uppercase tracking-tight">

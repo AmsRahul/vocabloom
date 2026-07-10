@@ -8,20 +8,11 @@ import {
   Star,
   Heart,
 } from "lucide-react";
-import { db } from "@/firebase";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  documentId,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { completeActivity, unlockNextActivity, XP_REWARDS, checkActivityAccess } from "@/progress";
+import { fetchSubChapterVocabs } from "@/dataService";
+import HelpModal from "@/components/HelpModal";
 
 interface Vocab {
   word: string;
@@ -106,16 +97,7 @@ const QuizPage: React.FC = () => {
     const fetchVocabs = async () => {
       if (!chapterId || !topicId) return;
       try {
-        const subDoc = await getDoc(doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`));
-        const ids = subDoc.data()?.vocab_ids || [];
-
-        const vocabQuery = query(
-          collection(db, "vocabularies"),
-          where(documentId(), "in", ids)
-        );
-        const snapshot = await getDocs(vocabQuery);
-        const vocabsData = snapshot.docs.map((d) => d.data() as Vocab);
-
+        const vocabsData = await fetchSubChapterVocabs(chapterId, topicId);
         setQuiz(generateQuiz(vocabsData));
       } catch (error) {
         console.error("Error fetching quiz:", error);
@@ -301,12 +283,23 @@ const QuizPage: React.FC = () => {
       ) : (
         <div className="w-full max-w-md bg-[#FAF9F6] rounded-[40px] shadow-2xl flex flex-col overflow-hidden border border-white">
           <div className="px-6 pt-8 pb-4 flex justify-between items-center">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 bg-black rounded-full text-white active:scale-90 transition-transform"
-            >
-              <Pause size={16} fill="currentColor" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 bg-black rounded-full text-white active:scale-90 transition-transform"
+              >
+                <Pause size={16} fill="currentColor" />
+              </button>
+              <HelpModal
+                activityName="Vocabulary Quiz"
+                steps={[
+                  { icon: "1", title: "Baca Soal", description: "Lihat kata Inggris dan dengarkan cara pengucapannya." },
+                  { icon: "2", title: "Pilih Jawaban", description: "Ketik salah satu dari 4 pilihan yang merupakan arti kata dalam Bahasa Indonesia." },
+                  { icon: "3", title: "Periksa", description: "Tekan tombol Periksa Jawaban. Jawaban benar menambah skor, jawaban salah mengurangi nyawa." },
+                  { icon: "4", title: "Nyawa", description: "Kamu punya 3 nyawa. Jika nyawa habis, permainan berakhir. Jawab dengan hati-hati!" },
+                ]}
+              />
+            </div>
             <h2 className="font-black text-[#1E293B] text-lg">Vocabulary Quiz</h2>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">

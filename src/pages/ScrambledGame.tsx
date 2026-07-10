@@ -2,19 +2,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Lightbulb, Volume2, CheckCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  documentId,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
-import { db } from "@/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { completeActivity, unlockNextActivity, XP_REWARDS, checkActivityAccess } from "@/progress";
+import { fetchSubChapterVocabs } from "@/dataService";
+import HelpModal from "@/components/HelpModal";
 
 interface Vocab {
   word: string;
@@ -76,17 +67,7 @@ const ScrambledWordGame: React.FC = () => {
     const fetchVocabs = async () => {
       if (!chapterId || !topicId) return;
       try {
-        const subDoc = await getDoc(doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`));
-        const ids = subDoc.data()?.vocab_ids || [];
-
-        const vocabQuery = query(
-          collection(db, "vocabularies"),
-          where(documentId(), "in", ids)
-        );
-
-        const snapshot = await getDocs(vocabQuery);
-        const vocabsData = snapshot.docs.map((d) => d.data() as Vocab);
-
+        const vocabsData = await fetchSubChapterVocabs(chapterId, topicId);
         setAllVocabs(vocabsData);
         if (vocabsData.length > 0) {
           setupGame(vocabsData[0]);
@@ -225,9 +206,20 @@ const ScrambledWordGame: React.FC = () => {
               Level {currentIndex + 1} of {allVocabs.length}
             </p>
           </div>
-          <button className="p-2 bg-yellow-100 rounded-full text-yellow-600">
-            <Lightbulb size={20} fill="currentColor" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="p-2 bg-yellow-100 rounded-full text-yellow-600">
+              <Lightbulb size={20} fill="currentColor" />
+            </button>
+            <HelpModal
+              activityName="Scrambled Word"
+              steps={[
+                { icon: "1", title: "Lihat Petunjuk", description: "Perhatikan gambar dan kata Indonesia sebagai petunjuk." },
+                { icon: "2", title: "Susun Kata", description: "Ketik huruf-huruf yang tersusun acak untuk membentuk kata Inggris yang benar." },
+                { icon: "3", title: "Koreksi", description: "Ketik huruf di bagian jawaban untuk mengembalikannya ke pilihan huruf." },
+                { icon: "4", title: "Periksa", description: "Tekan tombol Check Word. Jika benar, kamu akan melanjutkan ke kata berikutnya." },
+              ]}
+            />
+          </div>
         </div>
 
         <AnimatePresence>

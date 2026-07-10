@@ -1,22 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Mic, ArrowRight, Pause, CheckCircle2, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  documentId,
-  query,
-  where,
-  limit,
-  orderBy,
-} from "firebase/firestore";
-import { db } from "@/firebase";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { completeActivity, checkAndUnlockNextSubChapter, XP_REWARDS, checkActivityAccess } from "@/progress";
+import { fetchSubChapterVocabs, fetchChapterTopics } from "@/dataService";
 import { balloons } from "balloons-js";
+import HelpModal from "@/components/HelpModal";
 
 const rightSound = new Audio("/assets/sounds/right.mp3");
 const wrongSound = new Audio("/assets/sounds/wrong.mp3");
@@ -105,35 +95,12 @@ const SayIt: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const topicsQuery = query(
-          collection(db, "chapters", "about me", "sub_chapters"),
-          orderBy("order", "asc")
-        );
-        const topicsSnapshot = await getDocs(topicsQuery);
-        const topicsData = topicsSnapshot.docs.map((d) => d.id);
-        setAllSubChapters(topicsData);
+        if (!chapterId || !topicId) return;
+        const topics = await fetchChapterTopics(chapterId);
+        setAllSubChapters(topics.map((t) => t.id));
 
-        if (!topicId) return;
-        const subDoc = await getDoc(doc(db, `chapters/about me/sub_chapters/${topicId}`));
-        const ids = subDoc.data()?.vocab_ids || [];
-
-        if (ids.length === 0) {
-          setVocabs([]);
-          return;
-        }
-
-        const vocabQuery = query(
-          collection(db, "vocabularies"),
-          where(documentId(), "in", ids)
-        );
-
-        const vocabSnap = await getDocs(vocabQuery);
-        const vocabList = vocabSnap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as Vocab[];
-
-        setVocabs(vocabList);
+        const vocabs = await fetchSubChapterVocabs(chapterId, topicId);
+        setVocabs(vocabs as Vocab[]);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -239,12 +206,23 @@ const SayIt: React.FC = () => {
   return (
     <div className="w-full max-w-md bg-[#FAF9F6] rounded-[40px] shadow-2xl overflow-hidden flex flex-col border border-white">
       <div className="px-6 pt-8 pb-4 flex items-center justify-between">
-        <button
-          onClick={() => navigate(`/chapter/${chapterId}`)}
-          className="p-2 bg-black rounded-full text-white active:scale-90 transition-transform"
-        >
-          <Pause size={16} fill="currentColor" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate(`/chapter/${chapterId}`)}
+            className="p-2 bg-black rounded-full text-white active:scale-90 transition-transform"
+          >
+            <Pause size={16} fill="currentColor" />
+          </button>
+          <HelpModal
+            activityName="Say It!"
+            steps={[
+              { icon: "1", title: "Lihat Kata", description: "Perhatikan gambar dan kata Indonesia yang ditampilkan." },
+              { icon: "2", title: "Tekan Mikrofon", description: "Ketik tombol mikrofon untuk mulai merekam suara kamu." },
+              { icon: "3", title: "Ucapkan", description: "Ucapkan kata Inggris yang sesuai dengan arti yang ditampilkan." },
+              { icon: "4", title: "Lanjut", description: "Jika pengucapan benar, tekan tombol Next Word untuk melanjutkan ke kata berikutnya." },
+            ]}
+          />
+        </div>
         <h2 className="font-black text-[#1E293B] text-lg">Say It!</h2>
         <button onClick={() => speakWord(vocab.word)} className="p-2 bg-yellow-100 rounded-full text-yellow-600">
           <Volume2 size={20} />

@@ -3,18 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { X, ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
 import { Trophy, CheckCircle2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  collection,
-  getDocs,
-  query,
-  getDoc,
-  doc,
-  documentId,
-  where,
-} from "firebase/firestore";
-import { db } from "@/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { completeActivity, unlockNextActivity, XP_REWARDS } from "@/progress";
+import { fetchSubChapterVocabs } from "@/dataService";
+import HelpModal from "@/components/HelpModal";
 
 type Vocab = {
   id: string;
@@ -62,35 +54,8 @@ const NewWordSession: React.FC = () => {
       if (!chapterId || !topicId) return;
 
       try {
-        const subDoc = await getDoc(doc(db, `chapters/${chapterId}/sub_chapters/${topicId}`));
-        const ids = subDoc.data()?.vocab_ids || [];
-
-        if (ids.length === 0) {
-          setLoading(false);
-          return;
-        }
-
-        const fetchBatch = async (batchIds: string[]) => {
-          const vocabQuery = query(
-            collection(db, "vocabularies"),
-            where(documentId(), "in", batchIds)
-          );
-          const snapshot = await getDocs(vocabQuery);
-          return snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Vocab, "id">),
-          }));
-        };
-
-        const batchSize = 10;
-        const results: Vocab[] = [];
-        for (let i = 0; i < ids.length; i += batchSize) {
-          const batchIds = ids.slice(i, i + batchSize);
-          const batchResults = await fetchBatch(batchIds);
-          results.push(...batchResults);
-        }
-
-        setVocabs(results);
+        const data = await fetchSubChapterVocabs(chapterId, topicId);
+        setVocabs(data as Vocab[]);
       } catch (error) {
         console.error("Error fetching:", error);
       } finally {
@@ -177,9 +142,9 @@ const NewWordSession: React.FC = () => {
               {vocabs.length} kata baru
             </span>
           </p>
-          <div className="bg-green-50 text-green-600 font-bold text-lg px-4 py-2 rounded-xl inline-block mb-10">
+          {/* <div className="bg-green-50 text-green-600 font-bold text-lg px-4 py-2 rounded-xl inline-block mb-10">
             +{earnedXp || XP_REWARDS.flashcard} XP
-          </div>
+          </div> */}
 
           <div className="space-y-4">
             <button
@@ -231,7 +196,14 @@ const NewWordSession: React.FC = () => {
             <h1 className="text-lg font-black text-gray-800">Sesi Belajar</h1>
           </div>
 
-          <div className="w-10" />
+          <HelpModal
+            activityName="Flashcard"
+            steps={[
+              { icon: "1", title: "Lihat Kartu", description: "Amati gambar, kata Inggris, cara baca (fonetik), dan arti dalam Bahasa Indonesia." },
+              { icon: "2", title: "Dengarkan", description: "Ketik tombol speaker untuk mendengarkan cara pengucapan kata." },
+              { icon: "3", title: "Lanjut", description: "Tekan tombol Next untuk berpindah ke kartu berikutnya. Selesaikan semua kartu untuk menyelesaikan sesi ini." },
+            ]}
+          />
         </div>
 
         <div className="mb-4">
