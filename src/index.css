@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
@@ -219,5 +219,14 @@
   @keyframes fade-in {
     0% { opacity: 0; }
     100% { opacity: 1; }
+  }
+
+  @keyframes slide-down {
+    0% { transform: translateY(-100%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out;
   }
 }
