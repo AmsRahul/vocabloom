@@ -1,13 +1,8 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, serverTimestamp } from "firebase/firestore";
+import { getFirestore, serverTimestamp, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAOoITgosv9fu3FFUrwUserp3G1JMkRSG4",
   authDomain: "vocabloom-d8a96.firebaseapp.com",
@@ -18,9 +13,22 @@ const firebaseConfig = {
   measurementId: "G-V15FBL2X3Q",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 
 export const db = getFirestore(app);
+
+const enableOfflinePersistence = async () => {
+  try {
+    await enableIndexedDbPersistence(db);
+    console.log("Firestore offline persistence enabled");
+  } catch (err) {
+    if (err.code === "failed-precondition") {
+      console.warn("Firestore persistence: multiple tabs open, persistence disabled in this tab");
+    } else if (err.code === "unimplemented") {
+      console.warn("Firestore persistence: browser doesn't support IndexedDB");
+    }
+  }
+};
+enableOfflinePersistence();

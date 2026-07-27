@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { collection, getDocs, query, doc, getDoc } from "firebase/firestore";
+import { useEffect, useState, useCallback } from "react";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 import { Users, Trophy, Zap, BarChart3, Home, Book, Search, ChevronDown, ChevronRight, Target } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -20,6 +20,12 @@ interface StudentData {
   };
 }
 
+interface ChapterInfo {
+  id: string;
+  title: string;
+  subs: string[];
+}
+
 interface ChapterProgressInfo {
   chapterId: string;
   chapterTitle: string;
@@ -28,61 +34,34 @@ interface ChapterProgressInfo {
   percentage: number;
 }
 
-const CHAPTERS = [
-  { id: "about-me", title: "About Me", subs: ["personal-info", "greetings", "pronouns"] },
-  { id: "culinary", title: "Culinary and Me", subs: ["food", "drinks", "kitchen"] },
-  { id: "home", title: "Home Sweet Home", subs: ["rooms", "furniture", "utensils"] },
-  { id: "myschool", title: "My School", subs: ["schedule", "hobbies", "activities"] },
-  { id: "myworld", title: "This is My World", subs: ["animals", "nature", "environment"] },
-  { id: "cleanup", title: "Let's Clean Up!", subs: ["cleaning", "hygiene", "procedures"] },
-];
-
 const StudentProgressDashboard = () => {
   const [students, setStudents] = useState<StudentData[]>([]);
+  const [chapters, setChapters] = useState<ChapterInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
   const [chapterProgress, setChapterProgress] = useState<Record<string, ChapterProgressInfo[]>>({});
-  const [loadingProgress, setLoadingProgress] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const q = query(collection(db, "users"));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs
-          .map((doc) => ({
-            uid: doc.id,
-            ...doc.data(),
-          })) as StudentData[];
-        setStudents(data);
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStudents();
-  }, []);
-
-  const fetchChapterProgress = async (uid: string) => {
-    setLoadingProgress(uid);
+  const fetchChapterProgressForStudent = useCallback(async (uid: string, chs: ChapterInfo[]) => {
     try {
       const chapterData: ChapterProgressInfo[] = [];
 
-      for (const chapter of CHAPTERS) {
+      for (const chapter of chs) {
         let completedCount = 0;
+        const subsQuery = collection(db, "users", uid, "progress", chapter.id, "sub_chapters");
+        const snapshot = await getDocs(subsQuery);
+        const existingSubs = new Set(snapshot.docs.map((d) => d.id));
+
         for (const subId of chapter.subs) {
-          const subDocRef = doc(db, "users", uid, "progress", chapter.id, "sub_chapters", subId);
-          const subSnap = await getDoc(subDocRef);
-          if (subSnap.exists()) {
-            const subData = subSnap.data();
-            const activity = subData.activity || {};
-            const allDone = ["flashcard", "matching", "quiz", "scrambled", "sayit"].every(
-              (act) => activity[act]?.completed === true
-            );
-            if (allDone) completedCount++;
-          }
+          if (!existingSubs.has(subId)) continue;
+          const subDoc = snapshot.docs.find((d) => d.id === subId);
+          if (!subDoc) continue;
+          const subData = subDoc.data();
+          const activity = subData.activity || {};
+          const allDone = ["flashcard", "matching", "quiz", "scrambled", "sayit"].every(
+            (act) => activity[act]?.completed === true
+          );
+          if (allDone) completedCount++;
         }
 
         chapterData.push({
@@ -94,22 +73,64 @@ const StudentProgressDashboard = () => {
         });
       }
 
-      setChapterProgress((prev) => ({ ...prev, [uid]: chapterData }));
+      return chapterData;
     } catch (error) {
-      console.error("Error fetching chapter progress:", error);
-    } finally {
-      setLoadingProgress(null);
+      console.error(`Error fetching progress for ${uid}:`, error);
+      return [];
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [chaptersSnap, usersSnap] = await Promise.all([
+          getDocs(query(collection(db, "chapters"), orderBy("order", "asc"))),
+          getDocs(query(collection(db, "users"))),
+        ]);
+
+        const chs: ChapterInfo[] = await Promise.all(
+          chaptersSnap.docs.map(async (chDoc) => {
+            const subSnap = await getDocs(
+              query(collection(db, "chapters", chDoc.id, "sub_chapters"), orderBy("order", "asc"))
+            );
+            return {
+              id: chDoc.id,
+              title: chDoc.data().title || chDoc.id,
+              subs: subSnap.docs.map((s) => s.id),
+            };
+          })
+        );
+        setChapters(chs);
+
+        const data = usersSnap.docs
+          .map((doc) => ({
+            uid: doc.id,
+            ...doc.data(),
+          })) as StudentData[];
+        setStudents(data);
+
+        const progressResults = await Promise.all(
+          data.map((s) => fetchChapterProgressForStudent(s.uid, chs))
+        );
+        const progressMap: Record<string, ChapterProgressInfo[]> = {};
+        data.forEach((s, i) => {
+          progressMap[s.uid] = progressResults[i];
+        });
+        setChapterProgress(progressMap);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [fetchChapterProgressForStudent]);
 
   const toggleExpand = (uid: string) => {
     if (expandedStudent === uid) {
       setExpandedStudent(null);
     } else {
       setExpandedStudent(uid);
-      if (!chapterProgress[uid]) {
-        fetchChapterProgress(uid);
-      }
     }
   };
 
@@ -253,50 +274,44 @@ const StudentProgressDashboard = () => {
                 {/* Expanded Chapter Progress */}
                 {expandedStudent === student.uid && (
                   <div className="px-5 pb-5 border-t border-slate-50">
-                    {loadingProgress === student.uid ? (
-                      <div className="flex justify-center py-6">
-                        <div className="animate-spin w-6 h-6 border-4 border-purple-200 border-t-purple-500 rounded-full" />
-                      </div>
-                    ) : (
-                      <div className="pt-4 space-y-3">
-                        {chapterProgress[student.uid]?.map((ch) => (
-                          <div key={ch.chapterId} className="flex items-center gap-3">
-                            <div className="flex-1">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-black text-slate-600 truncate">
-                                  {ch.chapterTitle}
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-400">
-                                  {ch.completedSubChapters}/{ch.totalSubChapters}
-                                </span>
-                              </div>
-                              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 ${
-                                    ch.percentage === 100
-                                      ? "bg-green-500"
-                                      : ch.percentage > 0
-                                      ? "bg-yellow-500"
-                                      : "bg-slate-200"
-                                  }`}
-                                  style={{ width: `${ch.percentage}%` }}
-                                />
-                              </div>
+                    <div className="pt-4 space-y-3">
+                      {chapterProgress[student.uid]?.map((ch) => (
+                        <div key={ch.chapterId} className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-black text-slate-600 truncate">
+                                {ch.chapterTitle}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {ch.completedSubChapters}/{ch.totalSubChapters}
+                              </span>
                             </div>
-                            <span className={`text-xs font-black min-w-[40px] text-right ${
-                              ch.percentage === 100 ? "text-green-500" : "text-slate-400"
-                            }`}>
-                              {ch.percentage}%
-                            </span>
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  ch.percentage === 100
+                                    ? "bg-green-500"
+                                    : ch.percentage > 0
+                                    ? "bg-yellow-500"
+                                    : "bg-slate-200"
+                                }`}
+                                style={{ width: `${ch.percentage}%` }}
+                              />
+                            </div>
                           </div>
-                        ))}
-                        {(!chapterProgress[student.uid] || chapterProgress[student.uid].length === 0) && (
-                          <p className="text-center text-sm font-bold text-slate-400 py-4">
-                            No progress data available
-                          </p>
-                        )}
-                      </div>
-                    )}
+                          <span className={`text-xs font-black min-w-[40px] text-right ${
+                            ch.percentage === 100 ? "text-green-500" : "text-slate-400"
+                          }`}>
+                            {ch.percentage}%
+                          </span>
+                        </div>
+                      ))}
+                      {(!chapterProgress[student.uid] || chapterProgress[student.uid].length === 0) && (
+                        <p className="text-center text-sm font-bold text-slate-400 py-4">
+                          No progress data available
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

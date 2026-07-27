@@ -185,7 +185,7 @@ const SayIt: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6]">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <p className="font-bold text-gray-500 animate-pulse">
           Loading Vocabulary...
         </p>
@@ -195,7 +195,7 @@ const SayIt: React.FC = () => {
 
   if (!vocab) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6]">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <p className="font-bold text-gray-500">No data found.</p>
       </div>
     );
@@ -204,7 +204,7 @@ const SayIt: React.FC = () => {
   const image = vocab.imageUrl || `https://placehold.co/400x400?text=${vocab.word}`;
 
   return (
-    <div className="w-full max-w-md bg-[#FAF9F6] rounded-[40px] shadow-2xl overflow-hidden flex flex-col border border-white">
+    <div className="w-full max-w-md bg-orange-50 rounded-[40px] shadow-2xl overflow-hidden flex flex-col border border-white">
       <div className="px-6 pt-8 pb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button

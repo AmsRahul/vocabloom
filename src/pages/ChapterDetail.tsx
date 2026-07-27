@@ -15,9 +15,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { collection, getDocs, query, orderBy, getDoc, doc } from "firebase/firestore";
-import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
+import { fetchChapterTopics, fetchUserProgressOffline } from "../dataService";
 
 interface TopicItem {
   id: string;
@@ -57,26 +56,15 @@ const ChapterDetail: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const q = query(
-          collection(db, "chapters", chapterPath, "sub_chapters"),
-          orderBy("order", "asc")
-        );
-        const snapshot = await getDocs(q);
-        const topicData: TopicItem[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          title: doc.data().title || doc.id,
-          sub: doc.data().sub || "",
-          order: doc.data().order || 0,
-        }));
+        const topicData = await fetchChapterTopics(chapterPath);
         setTopics(topicData);
 
         if (user) {
           const progressData: Record<string, SubChapterProgress> = {};
           for (const topic of topicData) {
-            const docRef = doc(db, "users", user.uid, "progress", chapterPath, "sub_chapters", topic.id);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-              progressData[topic.id] = docSnap.data() as SubChapterProgress;
+            const data = await fetchUserProgressOffline(user.uid, chapterPath, topic.id);
+            if (data) {
+              progressData[topic.id] = data as SubChapterProgress;
             }
           }
           setProgress(progressData);

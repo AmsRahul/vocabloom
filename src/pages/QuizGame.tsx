@@ -192,7 +192,7 @@ const QuizPage: React.FC = () => {
 
   if (loading || !currentQuestion) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6]">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <motion.p
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
@@ -206,7 +206,7 @@ const QuizPage: React.FC = () => {
 
   if (isFinished) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] p-6">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50 p-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -281,7 +281,7 @@ const QuizPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="w-full max-w-md bg-[#FAF9F6] rounded-[40px] shadow-2xl flex flex-col overflow-hidden border border-white">
+        <div className="w-full max-w-md bg-orange-50 rounded-[40px] shadow-2xl flex flex-col overflow-hidden border border-white">
           <div className="px-6 pt-8 pb-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <button

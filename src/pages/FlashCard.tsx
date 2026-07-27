@@ -98,7 +98,7 @@ const NewWordSession: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFDFB]">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <p className="font-bold text-gray-400 animate-pulse">
           Menyiapkan kartu...
         </p>
@@ -108,7 +108,7 @@ const NewWordSession: React.FC = () => {
 
   if (isFinished) {
     return (
-      <div className="min-h-screen bg-[#FDFDFB] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-orange-50 flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -179,7 +179,7 @@ const NewWordSession: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFB] flex justify-center px-4 py-6 antialiased">
+    <div className="min-h-screen bg-orange-50 flex justify-center px-4 py-6 antialiased">
       <div className="w-full max-w-sm flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <button

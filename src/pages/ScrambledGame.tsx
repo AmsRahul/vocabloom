@@ -179,7 +179,7 @@ const ScrambledWordGame: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFDFB]">
+      <div className="min-h-screen flex items-center justify-center bg-orange-50">
         <motion.div
           animate={{ scale: [1, 1.2, 1], rotate: 360 }}
           transition={{ repeat: Infinity, duration: 2 }}
@@ -191,7 +191,7 @@ const ScrambledWordGame: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFB] flex justify-center p-4 font-sans antialiased">
+    <div className="min-h-screen bg-orange-50 flex justify-center p-4 font-sans antialiased">
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="w-full flex items-center justify-between mt-2 mb-4">
           <button

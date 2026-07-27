@@ -233,14 +233,14 @@ const MatchingGame2: React.FC = () => {
 
   if (loading)
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[#F9F9F9]">
+      <div className="h-screen flex flex-col items-center justify-center bg-orange-50">
         <Loader2 className="animate-spin text-blue-500 mb-2" size={40} />
         <p className="font-bold text-gray-400">Menyiapkan tantangan...</p>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] p-4 font-sans">
+    <div className="min-h-screen bg-orange-50 p-4 font-sans">
       {isUpdating && (
         <div className="fixed inset-0 bg-white/50 backdrop-blur-[2px] z-[60] flex items-center justify-center">
           <Loader2 className="animate-spin text-blue-500" />

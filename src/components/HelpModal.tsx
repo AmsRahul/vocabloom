@@ -33,10 +33,10 @@ const HelpModal: React.FC<HelpModalProps> = ({
         <button
           className={
             triggerClassName ??
-            "p-2 bg-white rounded-full border border-gray-100 shadow-sm active:scale-90 transition-transform"
+            "w-8 h-8 flex items-center justify-center bg-blue-500 rounded-full shadow-sm active:scale-90 transition-transform"
           }
         >
-          <HelpCircle size={16} className="text-gray-400" />
+          <HelpCircle size={16} className="text-white" />
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm rounded-[28px] p-0 overflow-hidden">
