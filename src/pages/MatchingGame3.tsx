@@ -248,7 +248,7 @@ const MatchingGame2: React.FC = () => {
       )}
       <div className="max-w-2xl mx-auto">
         <header className="flex justify-between items-center mb-8 pt-4">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <button
               onClick={() => navigate(`/chapter/${chapterId}`)}
               className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 active:scale-90 transition-transform"
