@@ -457,8 +457,12 @@ const WordCard: React.FC<WordCardProps> = ({
         : isWrong
           ? "bg-red-50 border-red-200 text-red-500 shadow-red-100"
           : isSelected
-            ? "bg-blue-500 border-blue-600 text-white scale-[1.03] shadow-lg shadow-blue-100"
-            : "bg-white border-gray-100 text-gray-700 hover:border-blue-100"
+            ? item.lang === "en"
+              ? "bg-blue-400 border-blue-500 text-white scale-[1.03] shadow-lg shadow-blue-100"
+              : "bg-yellow-400 border-yellow-500 text-white scale-[1.03] shadow-lg shadow-yellow-100"
+            : item.lang === "en"
+              ? "bg-blue-50 border-blue-200 text-blue-600 hover:border-blue-300"
+              : "bg-yellow-50 border-yellow-200 text-yellow-600 hover:border-yellow-300"
       }`}
   >
     {isSolved ? <CheckCircle2 size={24} className="mx-auto" /> : item.text}
